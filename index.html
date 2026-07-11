@@ -350,8 +350,8 @@ body.dark .refine-btns button,body.dark .diagnose-btns button{background:#16213e
 </div>
 <div class="main-input-area">
 <h2 class="main-title">무엇을 만들고 싶으세요?</h2>
-<p class="main-subtitle">중학교 교사를 위한 수업·평가·학교생활 AI 프롬프트 제작 도구</p>
-<p style="font-size:0.85rem;color:var(--gray-400);margin-top:4px;">학교 일만 맡기기엔 너무 아깝죠? 여행·일상·취미 등 다른 프롬프트도 만들 줄 알아요 😎</p>
+<p class="main-subtitle" style="margin-bottom:2px;">중학교 교사를 위한 수업·평가·학교생활 AI 프롬프트 제작 도구</p>
+<p style="font-size:0.85rem;color:var(--gray-400);margin-top:0;margin-bottom:20px;">학교 일만 맡기기엔 너무 아깝죠? 여행·일상·취미 등 다른 프롬프트도 만들 줄 알아요 😎</p>
 <div class="input-wrapper">
 <textarea id="main-input" class="main-textarea" enterkeyhint="go" aria-describedby="main-input-shortcut" placeholder="예: 중2 과학 활동지, 제주도 여행 계획, 회의록 정리, 제품 비교 등 무엇이든 적어보세요."></textarea>
 <p id="main-input-shortcut" class="input-shortcut">Enter로 생성 · Shift+Enter로 줄바꿈</p>
@@ -629,13 +629,12 @@ body.dark .refine-btns button,body.dark .diagnose-btns button{background:#16213e
 </div>
 </div>
 <!-- 문체 참고 예시문 -->
-<details style="margin-bottom:16px;">
-<summary style="font-size:0.85rem;font-weight:600;color:var(--gray-600);cursor:pointer;">문체 참고 예시문 — 선택 사항</summary>
-<div style="margin-top:8px;">
-<p style="font-size:0.8rem;color:var(--gray-500);margin-bottom:8px;">기존에 작성한 생기부 문장을 붙여넣으세요. AI가 문장 길이·어미·구성 방식만 분석하여 결과에 반영합니다. 학생 이름·학번·학급·학교명 등 식별 가능한 정보는 제거한 뒤 붙여넣으세요.</p>
-<textarea id="record-style-example" class="record-textarea" style="min-height:80px;" placeholder="예: 학급 자치회 시간에 안건을 정리하고 발언 순서를 조율하며 회의 진행에 적극적으로 참여함."></textarea>
+<div style="margin-bottom:16px;">
+<label for="record-style-example" style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:4px;color:var(--gray-600);">문체 참고 예시문 <span style="font-weight:400;color:var(--gray-400);">— 선택 사항</span></label>
+<p style="font-size:0.8rem;color:var(--gray-500);margin-bottom:8px;">기존에 작성한 생기부 문장을 붙여넣으세요. AI가 문장 길이·어미·구성 방식만 참고합니다.</p>
+<textarea id="record-style-example" class="record-textarea" style="min-height:80px;resize:vertical;" placeholder="예: 학급 자치회 시간에 안건을 정리하고 발언 순서를 조율하며 회의 진행에 적극적으로 참여함."></textarea>
+<p style="font-size:0.75rem;color:var(--gray-400);margin-top:4px;">학생 이름·학번·학급·학교명 등 식별정보는 제거해주세요. 예시문의 학생 사실은 새 기록문에 사용하지 않습니다.</p>
 </div>
-</details>
 <!-- 추가 조건 -->
 <div style="margin-bottom:16px;">
 <label for="record-extra-unified" style="font-size:0.82rem;font-weight:600;display:block;margin-bottom:4px;">추가 조건 <span style="font-weight:400;color:var(--gray-400);">— 선택 사항</span></label>
@@ -990,7 +989,8 @@ function checkRecordPolicyYear() {
 const FRESHNESS_LEVEL = { NONE: "NONE", RECOMMENDED: "RECOMMENDED", REQUIRED: "REQUIRED" };
 
 function detectEducationContext(text) {
-  const eduPatterns = /학년|중[1-3]|학생|학부모|담임|수업|교과|과목|활동지|평가표|루브릭|수행평가|시험|문항|학교|학급|생활지도|생기부|세특|행동특성|자율활동|진로활동|동아리활동|교과세특|수업지도안|학습목표|체험학습|가정통신문/;
+  // '학생' 단독은 교육 요청으로 판단하지 않음 (학생 할인, 대학생 등 일반 용례 방지)
+  const eduPatterns = /학년|중[1-3]|학부모|담임|수업|교과|과목|활동지|평가표|루브릭|수행평가|시험|문항|학교|학급|생활지도|생기부|세특|행동특성|자율활동|진로활동|동아리활동|교과세특|수업지도안|학습목표|체험학습|가정통신문/;
   return eduPatterns.test(text);
 }
 
@@ -1049,8 +1049,11 @@ function detectFreshnessNeed(text) {
   if (/예약|잔여|가능\s*여부/.test(text)) return FRESHNESS_LEVEL.REQUIRED;
   if (/법률|법령|정책|공식\s*지침|훈령/.test(text)) return FRESHNESS_LEVEL.REQUIRED;
   if (/최근\s*뉴스|최근\s*소식/.test(text)) return FRESHNESS_LEVEL.REQUIRED;
-  if (/여행|관광|맛집|식당|숙소|제품.*비교|추천/.test(text)) return FRESHNESS_LEVEL.RECOMMENDED;
+  if (/최신\s*교육과정|최신\s*교육부|최신\s*기준/.test(text)) return FRESHNESS_LEVEL.REQUIRED;
+  if (/여행|관광|맛집|식당|숙소/.test(text)) return FRESHNESS_LEVEL.RECOMMENDED;
   if (/앱|프로그램|소프트웨어|서비스.*사용법/.test(text)) return FRESHNESS_LEVEL.RECOMMENDED;
+  if (/(노트북|태블릿|휴대전화|스마트폰|전자기기|제품).*(비교|추천|구매|장단점|어떤.*좋|고르)/.test(text)) return FRESHNESS_LEVEL.RECOMMENDED;
+  if (/(비교|추천|구매|장단점|어떤.*좋|고르).*(노트북|태블릿|휴대전화|스마트폰|전자기기|제품)/.test(text)) return FRESHNESS_LEVEL.RECOMMENDED;
   return FRESHNESS_LEVEL.NONE;
 }
 
@@ -1075,7 +1078,7 @@ function buildUniversalMainPrompt(options) {
   p += `[작성 원칙]\n`;
   p += `1. 제작 방법, 개요, 아이디어 목록이 아니라 완성된 최종 결과물을 출력해줘.\n`;
   p += `2. 요청에 없는 개인정보, 학교명, 기관명, 연락처를 임의로 만들지 마.\n`;
-  p += `3. 사실 정보가 필요하지만 제공되지 않은 부분만 {{대괄호}}로 표시해.\n`;
+  p += `3. 결과 생성에 반드시 필요한 값이 빠져 있을 때만 수정 가능한 자리표시자로 최소한 표시해.\n`;
   p += `4. 가능한 한 자리표시자 없이 완성형으로 작성해.\n`;
   p += `5. 맞춤법과 형식 오류가 없게 작성해.\n\n`;
   p += `결과물을 만드는 방법이나 작업 과정을 설명하지 말고, 요청한 최종 결과물만 출력해줘.`;
@@ -1114,6 +1117,28 @@ function getMainAttachmentOptions() {
     purpose: document.getElementById('main-attach-purpose')?.value || 'auto',
     detail: document.getElementById('main-attach-detail')?.value?.trim() || ''
   };
+}
+
+// ===== 공통 최신정보+첨부파일 결합 =====
+function appendMainCommonInstructions(prompt, options) {
+  const { freshness, attachment } = options || {};
+  let extra = '';
+  if (freshness && freshness !== FRESHNESS_LEVEL.NONE) {
+    extra += buildFreshnessInstructions(freshness);
+  }
+  if (attachment && attachment.enabled) {
+    extra += buildMainAttachmentInstructions(attachment);
+    if (freshness === FRESHNESS_LEVEL.REQUIRED || freshness === FRESHNESS_LEVEL.RECOMMENDED) {
+      extra += `첨부파일의 작성일 또는 자료 기준 시점을 확인해. 가격, 운영시간, 교통편, 법령, 정책, 교육 기준, 제품 사양처럼 변경될 수 있는 정보는 첨부파일만 믿지 말고 현재 공식 자료로 다시 확인해.\n\n`;
+    }
+  }
+  if (!extra) return prompt;
+  // 프롬프트 마지막 줄 앞에 삽입
+  const lastLine = '결과물을 만드는 방법이나 작업 과정을 설명하지 말고, 요청한 최종 결과물만 출력해줘.';
+  if (prompt.includes(lastLine)) {
+    return prompt.replace(lastLine, extra + lastLine);
+  }
+  return prompt + '\n\n' + extra;
 }
 
 // ===== 자리표시자 검사 및 복사 전 확인 =====
@@ -2124,7 +2149,11 @@ if (!isEducation) {
 }
 // 교육 요청: 기존 교육 전문 경로
 const analysis=analyzeTeacherRequest(processedInput);
-const prompt=buildOptimizedPrompt(analysis);
+let prompt=buildOptimizedPrompt(analysis);
+// 교육 요청에도 최신정보·첨부파일 공통 지침 결합
+const freshness = detectFreshnessNeed(processedInput);
+const attachment = getMainAttachmentOptions();
+prompt = appendMainCommonInstructions(prompt, { freshness, attachment });
 currentPrompt=prompt;
 setResultMode('GENERAL');
 // 의도 해석 - 한 문장으로 안전하게 표시
@@ -2141,7 +2170,9 @@ intentEl.appendChild(document.createTextNode(intentSummary));
 document.getElementById('result-prompt').value=prompt;
 // result-tip
 const tipEl=document.getElementById('result-tip');
-if(analysis.assumptions.length>0){
+if(attachment && attachment.enabled){
+tipEl.textContent='📎 이 프롬프트는 첨부파일 사용을 전제로 작성되었습니다. AI 대화창에 프롬프트를 붙여넣은 뒤 파일도 함께 첨부해주세요.';
+}else if(analysis.assumptions.length>0){
 tipEl.textContent='💡 '+analysis.assumptions.join(', ')+'. 결과 프롬프트에서 바로 수정할 수 있습니다.';
 }else{
 tipEl.textContent='💡 입력한 과목·학년·자료 유형을 반영했습니다. 복사 후 원하는 AI에 붙여넣으세요.';
@@ -2346,7 +2377,7 @@ function generateUnifiedRecordPrompt() {
   currentRecordType = type;
   const ctx = getRecordContext(type);
   const rules = getRecordItemRules(type);
-  const sentenceCount = document.getElementById('record-sentence-count-unified')?.value || '1';
+  const sentenceCount = Math.min(10, Math.max(1, Number(document.getElementById('record-sentence-count-unified')?.value) || 1));
   const targetMode = document.getElementById('record-target-mode')?.value || 'auto';
   const extra = document.getElementById('record-extra-unified')?.value?.trim() || '';
   const styleExample = document.getElementById('record-style-example')?.value?.trim() || '';
@@ -2396,7 +2427,7 @@ function generateUnifiedRecordPrompt() {
   let tip = '⚠️ <strong>꼭 확인하세요:</strong> 생성 결과는 문장 표현과 구조가 완성된 교사 검토용 기록문입니다. 실제 관찰 사실과 최신 공식 기재 기준은 교사가 최종 확인해야 합니다.';
   if (hasFile) tip += '<br>📎 선택한 활동자료 파일을 AI 대화창에 함께 첨부해주세요.';
   document.getElementById('result-tip').innerHTML = tip;
-  saveToRecent(input || '생기부 ' + type, p);
+  saveToRecent('생기부 ' + type + ' 프롬프트', '');
   showSection('result');
   setResultReturnTarget("record", null);
   updateResultBackButton();
