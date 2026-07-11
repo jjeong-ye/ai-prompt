@@ -676,7 +676,7 @@ body.dark .refine-btns button,body.dark .diagnose-btns button{background:#16213e
 </div>
 </div>
 <!-- 🚦 이거 써도 되나요? -->
-<div class="traffic-check">
+<div class="traffic-check" style="display:none;">
 <button class="traffic-check-toggle" onclick="toggleTrafficCheck()"><i class="ri-traffic-light-line"></i> 🚦 이거 써도 되나요? <i class="ri-arrow-down-s-line" id="traffic-arrow"></i></button>
 <div id="traffic-check-panel" class="traffic-check-panel hidden">
 <p style="font-size:0.85rem;color:var(--gray-500);margin-bottom:12px;">직접 입력하거나, 엑셀/텍스트 파일을 업로드하면 기재금지·위험 표현을 검사합니다.</p>
@@ -715,7 +715,7 @@ body.dark .refine-btns button,body.dark .diagnose-btns button{background:#16213e
 </div>
 </div>
 <!-- 🫀 문장 CPR -->
-<div class="traffic-check">
+<div class="traffic-check" style="display:none;">
 <button class="traffic-check-toggle" onclick="toggleCPRCheck()"><i class="ri-heart-pulse-line"></i> 🫀 문장 CPR (다듬기) <i class="ri-arrow-down-s-line" id="cpr-arrow"></i></button>
 <div id="cpr-check-panel" class="traffic-check-panel hidden">
 <p style="font-size:0.85rem;color:var(--gray-500);margin-bottom:12px;">AI가 만들어준 초안 문장을 붙여넣으면, 구체화·과정화·안전화 프롬프트를 생성합니다.</p>
@@ -725,7 +725,7 @@ body.dark .refine-btns button,body.dark .diagnose-btns button{background:#16213e
 </div>
 </div>
 <!-- 🛡 붙여넣기 전 최종 점검 -->
-<div class="traffic-check">
+<div class="traffic-check" style="display:none;">
 <button class="traffic-check-toggle" onclick="toggleFinalCheckPanel()"><i class="ri-shield-check-line"></i> 🛡 붙여넣기 전 최종 점검 <i class="ri-arrow-down-s-line" id="final-check-arrow"></i></button>
 <div id="final-check-panel" class="traffic-check-panel hidden">
 <p style="font-size:0.85rem;color:var(--gray-500);margin-bottom:12px;">AI가 만들어준 문장을 여기에 붙여넣으면 즉시 점검합니다.</p>
@@ -2305,33 +2305,42 @@ function onUnifiedRecordItemChange() {
 function openRecordReviewTool(tool) {
   const cardList = document.getElementById('record-review-card-list');
   const area = document.getElementById('record-review-tool-area');
-  if (!area) return;
-  // 카드 목록 숨기고 도구 영역 표시
+  const content = document.getElementById('record-review-tool-content');
+  if (!area || !content) return;
   if (cardList) cardList.style.display = 'none';
   area.classList.remove('hidden');
-  // 모든 검토 패널 닫기
-  const allPanels = ['traffic-check-panel','cpr-check-panel','final-check-panel'];
-  allPanels.forEach(id => { const p = document.getElementById(id); if(p) p.classList.add('hidden'); });
-  // 선택한 도구만 열기
+  content.innerHTML = '';
   const panelMap = { traffic: 'traffic-check-panel', cpr: 'cpr-check-panel', final: 'final-check-panel', bias: 'final-check-panel' };
   const panelId = panelMap[tool];
   const panel = document.getElementById(panelId);
-  if (panel) panel.classList.remove('hidden');
-  // 화살표 상태 초기화
-  const arrowMap = { traffic: 'traffic-arrow', cpr: 'cpr-arrow', final: 'final-check-arrow', bias: 'final-check-arrow' };
-  const arrow = document.getElementById(arrowMap[tool]);
-  if (arrow) arrow.style.transform = 'rotate(180deg)';
+  if (panel) {
+    // 부모 래퍼에서 빼내어 도구 영역에 표시
+    const wrapper = panel.parentElement;
+    if (wrapper) wrapper.style.display = '';
+    panel.classList.remove('hidden');
+    content.appendChild(panel);
+  }
 }
 
 function closeRecordReviewTool() {
   const cardList = document.getElementById('record-review-card-list');
   const area = document.getElementById('record-review-tool-area');
+  const content = document.getElementById('record-review-tool-content');
   if (area) area.classList.add('hidden');
   if (cardList) cardList.style.display = '';
-  // 모든 패널 닫기
-  ['traffic-check-panel','cpr-check-panel','final-check-panel'].forEach(id => {
-    const p = document.getElementById(id); if(p) p.classList.add('hidden');
-  });
+  // 패널을 원래 숨긴 래퍼로 복원
+  if (content) {
+    const recordSection = document.getElementById('record-section');
+    ['traffic-check-panel','cpr-check-panel','final-check-panel'].forEach(id => {
+      const panel = document.getElementById(id);
+      if (panel && content.contains(panel)) {
+        panel.classList.add('hidden');
+        // record-section 끝에 복원
+        if (recordSection) recordSection.appendChild(panel);
+      }
+    });
+    content.innerHTML = '';
+  }
 }
 
 function onRecordOutputFormatChange() {
