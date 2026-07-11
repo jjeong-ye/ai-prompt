@@ -633,7 +633,7 @@ body.dark .refine-btns button,body.dark .diagnose-btns button{background:#16213e
 <label for="record-style-example" style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:4px;color:var(--gray-600);">문체 참고 예시문 <span style="font-weight:400;color:var(--gray-400);">— 선택 사항</span></label>
 <p style="font-size:0.8rem;color:var(--gray-500);margin-bottom:2px;">기존에 작성한 생기부 문장을 붙여넣으세요. AI가 문장 길이·어미·구성 방식만 참고합니다.</p>
 <p style="font-size:0.75rem;color:var(--gray-400);margin-top:0;margin-bottom:8px;">학생 이름·학번·학급·학교명 등 식별정보는 제거해주세요. 예시문의 학생 사실은 새 기록문에 사용하지 않습니다.</p>
-<textarea id="record-style-example" class="record-textarea" style="min-height:60px;resize:vertical;" placeholder="예: 학급 자치회 시간에 안건을 정리하고 발언 순서를 조율하며 회의 진행에 적극적으로 참여함."></textarea>
+<textarea id="record-style-example" class="record-textarea" style="min-height:80px;resize:vertical;" placeholder="예: 학급 자치회 시간에 안건을 정리하고 발언 순서를 조율하며 회의 진행에 적극적으로 참여함."></textarea>
 </div>
 <!-- 추가 조건 -->
 <div style="margin-bottom:16px;">
@@ -662,11 +662,11 @@ body.dark .refine-btns button,body.dark .diagnose-btns button{background:#16213e
 </div>
 <!-- 검토·다듬기 패널 -->
 <div id="record-review-panel" role="tabpanel" aria-labelledby="record-tab-review" class="hidden">
-<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
-<div class="category-card" onclick="openRecordReviewTool('traffic')"><i class="ri-traffic-light-line"></i><h4>이거 써도 되나요?</h4><p style="font-size:0.8rem;color:var(--gray-500);">기재 전 표현과 내용의 위험 신호를 점검합니다.</p></div>
-<div class="category-card" onclick="openRecordReviewTool('cpr')"><i class="ri-heart-pulse-line"></i><h4>문장 CPR</h4><p style="font-size:0.8rem;color:var(--gray-500);">기존 문장을 사실 범위 안에서 완성형 기록문으로 다듬습니다.</p></div>
-<div class="category-card" onclick="openRecordReviewTool('final')"><i class="ri-shield-check-line"></i><h4>붙여넣기 전 최종 점검</h4><p style="font-size:0.8rem;color:var(--gray-500);">누락, 위험 표현, 글자 수와 예상 Byte를 최종 확인합니다.</p></div>
-<div class="category-card" onclick="openRecordReviewTool('bias')"><i class="ri-scales-line"></i><h4>편향 표현 검사</h4><p style="font-size:0.8rem;color:var(--gray-500);">성별, 가정환경, 성격 등 문맥상 편향 표현을 검사합니다.</p></div>
+<div id="record-review-card-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
+<button type="button" class="category-card" onclick="openRecordReviewTool('traffic')" style="text-align:center;cursor:pointer;"><i class="ri-traffic-light-line"></i><h4>이거 써도 되나요?</h4><p style="font-size:0.8rem;color:var(--gray-500);">기재 전 표현과 내용의 위험 신호를 점검합니다.</p></button>
+<button type="button" class="category-card" onclick="openRecordReviewTool('cpr')" style="text-align:center;cursor:pointer;"><i class="ri-heart-pulse-line"></i><h4>문장 CPR</h4><p style="font-size:0.8rem;color:var(--gray-500);">기존 문장을 사실 범위 안에서 완성형 기록문으로 다듬습니다.</p></button>
+<button type="button" class="category-card" onclick="openRecordReviewTool('final')" style="text-align:center;cursor:pointer;"><i class="ri-shield-check-line"></i><h4>붙여넣기 전 최종 점검</h4><p style="font-size:0.8rem;color:var(--gray-500);">누락, 위험 표현, 글자 수와 예상 Byte를 최종 확인합니다.</p></button>
+<button type="button" class="category-card" onclick="openRecordReviewTool('bias')" style="text-align:center;cursor:pointer;"><i class="ri-scales-line"></i><h4>편향 표현 검사</h4><p style="font-size:0.8rem;color:var(--gray-500);">성별, 가정환경, 성격 등 문맥상 편향 표현을 검사합니다.</p></button>
 </div>
 <!-- 각 검토 도구 영역 -->
 <div id="record-review-tool-area" class="hidden" style="margin-top:20px;">
@@ -674,81 +674,6 @@ body.dark .refine-btns button,body.dark .diagnose-btns button{background:#16213e
 <div id="record-review-tool-content"></div>
 </div>
 </div>
-<div id="record-activity-list-box" class="hidden" style="margin-bottom:12px;">
-<p style="font-size:0.85rem;font-weight:600;margin-bottom:8px;"><i class="ri-list-check-2"></i> 활동목록 기반 일괄 생성</p>
-<p style="font-size:0.82rem;color:var(--gray-500);margin-bottom:10px;">활동명과 관찰 내용을 한 줄에 하나씩 입력하면, 각각의 프롬프트를 한 번에 만들어줍니다.</p>
-<textarea id="record-activity-input" class="record-textarea" style="min-height:140px;" placeholder="활동1 - 학급회의 진행, 갈등 중재&#10;활동2 - 체육대회 응원 기획 및 진행&#10;활동3 - 학급 환경 정리 봉사 참여"></textarea>
-<div style="margin-top:10px;">
-<p style="font-size:0.82rem;color:var(--gray-500);margin-bottom:8px;"><i class="ri-upload-cloud-line"></i> 또는 파일로 업로드</p>
-<div class="file-drop-zone" style="padding:16px;" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleRecordActivityFileDrop(event)">
-<p style="font-size:0.82rem;">txt·csv 파일을 끌어다 놓거나</p>
-<label class="file-select-btn" style="font-size:0.8rem;padding:6px 14px;">파일 선택<input type="file" accept=".txt,.csv" onchange="handleRecordActivityFileSelect(event)" style="display:none"></label>
-</div>
-<div id="record-activity-file-list"></div>
-</div>
-<div style="margin-top:10px;">
-<label style="font-size:0.82rem;font-weight:600;">문장 개수 / 톤 / 추가 조건 (선택)</label>
-<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
-<input type="number" id="record-activity-sentence-count" class="traffic-input" style="width:80px;" placeholder="개수" min="1" max="10" value="1">
-<select id="record-activity-tone" class="subject-select" style="flex:1;min-width:120px;">
-<option value="">톤 선택 (기본: 관찰자)</option>
-<option value="따뜻한">따뜻한</option>
-<option value="객관적">객관적</option>
-<option value="격려형">격려형</option>
-<option value="성장중심">성장중심</option>
-</select>
-</div>
-<input type="text" id="record-activity-extra-condition" class="traffic-input" style="width:100%;margin-top:6px;" placeholder="추가 조건 (예: 자율활동 시간에 한 활동 위주로)">
-</div>
-</div>
-<div id="record-file-based-box" class="hidden" style="margin-bottom:12px;">
-<p style="font-size:0.85rem;font-weight:600;margin-bottom:8px;"><i class="ri-attachment-2"></i> 파일 기반 프롬프트 생성</p>
-<p style="font-size:0.82rem;color:var(--gray-500);margin-bottom:10px;">활동파일(관찰 데이터)과 출력형식파일을 AI에 함께 첨부하면, AI가 자료를 읽고 문장을 생성합니다. 아래에서 프롬프트만 만들어 복사한 뒤, AI 대화창에 파일과 함께 붙여넣으세요.</p>
-<div style="padding:14px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius-sm);margin-bottom:10px;">
-<p style="font-size:0.82rem;font-weight:600;margin-bottom:6px;">📎 첨부할 파일 안내</p>
-<ul style="font-size:0.8rem;color:var(--gray-600);margin:0;padding-left:18px;line-height:1.7;">
-<li><strong>활동파일</strong> — 학생별 관찰 내용, 활동지, 수행평가 결과, 교사 메모, 산출물 등이 담긴 한글(HWP/HWPX)·PDF·엑셀·CSV·TXT·DOCX·PPTX 자료</li>
-<li><strong>출력형식파일</strong> — 원하는 표 양식, 학교 제출 양식, 예시 문장, 이전 결과물 등. 없으면 생략 가능</li>
-</ul>
-</div>
-<div class="file-drop-zone" id="record-prompt-activity-file-zone" style="margin-bottom:10px;" ondragover="handleRecordPromptFileDragOver(event)" ondragleave="handleRecordPromptFileDragLeave(event)" ondrop="handleRecordPromptActivityFileDrop(event)">
-<i class="ri-upload-cloud-line"></i>
-<p>활동파일을 여기에 끌어다 놓거나</p>
-<label class="file-select-btn">활동파일 선택<input type="file" id="record-prompt-activity-files" multiple accept=".hwp,.hwpx,.pdf,.xlsx,.xls,.csv,.tsv,.txt,.docx,.pptx" onchange="handleRecordPromptActivityFileSelect(event)" style="display:none"></label>
-<p class="file-hint">한글, PDF, 엑셀, CSV, TXT, DOCX, PPTX 등 활동자료</p>
-</div>
-<div id="record-prompt-activity-file-list" class="multi-hint hidden"></div>
-<div class="file-drop-zone" id="record-prompt-format-file-zone" style="margin-bottom:10px;" ondragover="handleRecordPromptFileDragOver(event)" ondragleave="handleRecordPromptFileDragLeave(event)" ondrop="handleRecordPromptFormatFileDrop(event)">
-<i class="ri-file-list-3-line"></i>
-<p>출력형식파일을 여기에 끌어다 놓거나</p>
-<label class="file-select-btn">출력형식파일 선택<input type="file" id="record-prompt-format-files" multiple accept=".hwp,.hwpx,.pdf,.xlsx,.xls,.csv,.tsv,.txt,.docx" onchange="handleRecordPromptFormatFileSelect(event)" style="display:none"></label>
-<p class="file-hint">원하는 결과 양식, 예시표, 학교 제출 양식, 출력 샘플</p>
-</div>
-<div id="record-prompt-format-file-list" class="multi-hint hidden"></div>
-<div style="margin-bottom:10px;">
-<label style="font-size:0.82rem;font-weight:600;">엑셀·CSV 활동파일 열 이름 (선택)</label>
-<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
-<input type="text" id="record-file-name-col-input" class="traffic-input" style="flex:1;min-width:100px;" placeholder="이름/번호 열 (예: 학생명)">
-<input type="text" id="record-file-obs-col-input" class="traffic-input" style="flex:1;min-width:100px;" placeholder="관찰 내용 열 (예: 관찰기록)">
-</div>
-<p style="font-size:0.75rem;color:var(--gray-400);margin-top:4px;">엑셀·CSV 파일을 첨부할 때만 입력하세요. 한글·PDF·DOCX·PPTX 자료는 비워두어도 됩니다.</p>
-</div>
-<div style="margin-bottom:10px;">
-<label style="font-size:0.82rem;font-weight:600;">문장 개수 / 톤 / 추가 조건 (선택)</label>
-<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
-<input type="number" id="record-file-sentence-count" class="traffic-input" style="width:80px;" placeholder="개수" min="1" max="10" value="1">
-<select id="record-file-tone" class="subject-select" style="flex:1;min-width:120px;">
-<option value="">톤 선택 (기본: 관찰자)</option>
-<option value="따뜻한">따뜻한</option>
-<option value="객관적">객관적</option>
-<option value="격려형">격려형</option>
-<option value="성장중심">성장중심</option>
-</select>
-</div>
-<input type="text" id="record-file-extra-condition" class="traffic-input" style="width:100%;margin-top:6px;" placeholder="추가 조건 (예: 과학 실험 수업 중심으로)">
-</div>
-</div>
-<button id="record-generate-btn" class="main-submit-btn" onclick="generateRecordPrompt()"><i class="ri-sparkling-line"></i> 생기부 프롬프트 만들기</button>
 </div>
 <!-- 🚦 이거 써도 되나요? -->
 <div class="traffic-check">
@@ -2378,25 +2303,56 @@ function onUnifiedRecordItemChange() {
 }
 
 function openRecordReviewTool(tool) {
+  const cardList = document.getElementById('record-review-card-list');
   const area = document.getElementById('record-review-tool-area');
-  const content = document.getElementById('record-review-tool-content');
-  if (!area || !content) return;
+  if (!area) return;
+  // 카드 목록 숨기고 도구 영역 표시
+  if (cardList) cardList.style.display = 'none';
   area.classList.remove('hidden');
-  // 기존 검토 패널의 내용을 여기로 이동 표시
-  const panels = { traffic: 'traffic-check-panel', cpr: 'cpr-check-panel', final: 'final-check-panel', bias: 'final-check-panel' };
-  const panelId = panels[tool];
+  // 모든 검토 패널 닫기
+  const allPanels = ['traffic-check-panel','cpr-check-panel','final-check-panel'];
+  allPanels.forEach(id => { const p = document.getElementById(id); if(p) p.classList.add('hidden'); });
+  // 선택한 도구만 열기
+  const panelMap = { traffic: 'traffic-check-panel', cpr: 'cpr-check-panel', final: 'final-check-panel', bias: 'final-check-panel' };
+  const panelId = panelMap[tool];
   const panel = document.getElementById(panelId);
-  if (panel) { panel.classList.remove('hidden'); }
-  // 편향 검사는 최종점검 안의 버튼이므로 해당 패널을 열어줌
-  if (tool === 'bias') { toggleFinalCheckPanel(); }
-  else if (tool === 'traffic') { const tp = document.getElementById('traffic-check-panel'); if(tp) tp.classList.remove('hidden'); }
-  else if (tool === 'cpr') { const cp = document.getElementById('cpr-check-panel'); if(cp) cp.classList.remove('hidden'); }
-  else if (tool === 'final') { const fp = document.getElementById('final-check-panel'); if(fp) fp.classList.remove('hidden'); }
+  if (panel) panel.classList.remove('hidden');
+  // 화살표 상태 초기화
+  const arrowMap = { traffic: 'traffic-arrow', cpr: 'cpr-arrow', final: 'final-check-arrow', bias: 'final-check-arrow' };
+  const arrow = document.getElementById(arrowMap[tool]);
+  if (arrow) arrow.style.transform = 'rotate(180deg)';
 }
 
 function closeRecordReviewTool() {
+  const cardList = document.getElementById('record-review-card-list');
   const area = document.getElementById('record-review-tool-area');
   if (area) area.classList.add('hidden');
+  if (cardList) cardList.style.display = '';
+  // 모든 패널 닫기
+  ['traffic-check-panel','cpr-check-panel','final-check-panel'].forEach(id => {
+    const p = document.getElementById(id); if(p) p.classList.add('hidden');
+  });
+}
+
+function onRecordOutputFormatChange() {
+  const sel = document.getElementById('record-output-format');
+  const excelOpts = document.getElementById('record-excel-options');
+  if (sel && excelOpts) {
+    excelOpts.classList.toggle('hidden', sel.value !== 'excel');
+  }
+}
+function onRecordExcelModeChange() {
+  const custom = document.querySelector('input[name="record-excel-mode"][value="custom"]');
+  const zone = document.getElementById('record-excel-template-zone');
+  if (zone) zone.classList.toggle('hidden', !custom || !custom.checked);
+}
+function handleRecordTemplateFileSelect(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  if (!window._recordUnifiedFileState) window._recordUnifiedFileState = { activityFiles: [], outputTemplateFiles: [] };
+  window._recordUnifiedFileState.outputTemplateFiles = [file];
+  const list = document.getElementById('record-output-template-file-list');
+  if (list) list.textContent = file.name;
 }
 
 function generateUnifiedRecordPrompt() {
@@ -3209,7 +3165,7 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 
 // ===== 최근 기록 (localStorage) =====
 function saveToRecent(input,prompt){let r=JSON.parse(localStorage.getItem('ai-teacher-recent')||'[]');r.unshift({input,prompt:prompt.substring(0,200),time:Date.now()});if(r.length>5)r=r.slice(0,5);localStorage.setItem('ai-teacher-recent',JSON.stringify(r));renderRecent();}
-function renderRecent(){const c=document.getElementById('recent-section');if(!c)return;const r=JSON.parse(localStorage.getItem('ai-teacher-recent')||'[]');if(r.length===0){c.classList.add('hidden');c.innerHTML='';return;}c.classList.remove('hidden');c.innerHTML=`<div class="recent-header"><h3 class="recent-title">최근에 만든 것</h3><button class="recent-clear-btn" onclick="clearRecent()">기록 지우기</button></div>`+r.map((item,i)=>`<div class="recent-item" onclick="loadRecent(${i})"><span class="recent-item-text">${item.input}</span><span class="recent-item-time">${getTimeAgo(item.time)}</span></div>`).join('');}
+function renderRecent(){const c=document.getElementById('recent-section');if(!c)return;const r=JSON.parse(localStorage.getItem('ai-teacher-recent')||'[]');if(r.length===0){c.classList.add('hidden');c.innerHTML='';return;}c.classList.remove('hidden');c.innerHTML='';const header=document.createElement('div');header.className='recent-header';const title=document.createElement('h3');title.className='recent-title';title.textContent='최근에 만든 것';header.appendChild(title);const clearBtn=document.createElement('button');clearBtn.className='recent-clear-btn';clearBtn.textContent='기록 지우기';clearBtn.onclick=clearRecent;header.appendChild(clearBtn);c.appendChild(header);r.forEach((item,i)=>{const div=document.createElement('div');div.className='recent-item';div.onclick=()=>loadRecent(i);const txt=document.createElement('span');txt.className='recent-item-text';txt.textContent=item.input||'';div.appendChild(txt);const time=document.createElement('span');time.className='recent-item-time';time.textContent=getTimeAgo(item.time);div.appendChild(time);c.appendChild(div);});}
 function clearRecent(){localStorage.removeItem('ai-teacher-recent');renderRecent();showToast('최근 기록을 삭제했습니다');}
 function loadRecent(idx){const r=JSON.parse(localStorage.getItem('ai-teacher-recent')||'[]');if(!r[idx])return;document.getElementById('main-input').value=r[idx].input;generatePrompt();}
 function getTimeAgo(ts){const d=Date.now()-ts;const m=Math.floor(d/60000);if(m<1)return'방금 전';if(m<60)return`${m}분 전`;const h=Math.floor(m/60);if(h<24)return`${h}시간 전`;return`${Math.floor(h/24)}일 전`;}
@@ -3226,7 +3182,7 @@ function sanitizePromptForStorage(prompt, resultMode) {
 }
 function toggleFavorite(){if(!currentPrompt)return;let favs=JSON.parse(localStorage.getItem('ai-teacher-favs')||'[]');const exists=favs.findIndex(f=>f.prompt===currentPrompt||f.prompt===sanitizePromptForStorage(currentPrompt,currentResultMode));if(exists>=0){favs.splice(exists,1);document.getElementById('fav-btn').classList.remove('active');showToast('즐겨찾기에서 제거했습니다');}else{const safePrompt=sanitizePromptForStorage(currentPrompt,currentResultMode);favs.unshift({input:currentInput,prompt:safePrompt,resultMode:currentResultMode,time:Date.now()});document.getElementById('fav-btn').classList.add('active');showToast('⭐ 즐겨찾기에 저장했습니다');}localStorage.setItem('ai-teacher-favs',JSON.stringify(favs));}
 function checkFavoriteStatus(){const favs=JSON.parse(localStorage.getItem('ai-teacher-favs')||'[]');const btn=document.getElementById('fav-btn');if(favs.some(f=>f.prompt===currentPrompt))btn.classList.add('active');else btn.classList.remove('active');}
-function renderFavorites(){const favs=JSON.parse(localStorage.getItem('ai-teacher-favs')||'[]');const list=document.getElementById('favorites-list');const empty=document.getElementById('favorites-empty');if(favs.length===0){list.innerHTML='';empty.style.display='block';return;}empty.style.display='none';list.innerHTML=favs.map((f,i)=>`<div class="fav-card"><div class="fav-card-prompt">${f.prompt}</div><div class="fav-card-actions"><button class="btn-primary" onclick="useFavorite(${i})">사용하기</button><button class="btn-secondary" onclick="removeFavorite(${i})">삭제</button></div></div>`).join('');}
+function renderFavorites(){const favs=JSON.parse(localStorage.getItem('ai-teacher-favs')||'[]');const list=document.getElementById('favorites-list');const empty=document.getElementById('favorites-empty');if(favs.length===0){list.innerHTML='';empty.style.display='block';return;}empty.style.display='none';list.innerHTML='';favs.forEach((f,i)=>{const card=document.createElement('div');card.className='fav-card';const prompt=document.createElement('div');prompt.className='fav-card-prompt';prompt.textContent=f.prompt||'';card.appendChild(prompt);const actions=document.createElement('div');actions.className='fav-card-actions';const useBtn=document.createElement('button');useBtn.className='btn-primary';useBtn.textContent='사용하기';useBtn.onclick=()=>useFavorite(i);actions.appendChild(useBtn);const delBtn=document.createElement('button');delBtn.className='btn-secondary';delBtn.textContent='삭제';delBtn.onclick=()=>removeFavorite(i);actions.appendChild(delBtn);card.appendChild(actions);list.appendChild(card);});}
 function useFavorite(idx){const favs=JSON.parse(localStorage.getItem('ai-teacher-favs')||'[]');if(!favs[idx])return;currentPrompt=favs[idx].prompt;currentInput=favs[idx].input||'';setResultMode(favs[idx].resultMode||'GENERAL');document.getElementById('result-intent').innerHTML='<strong>즐겨찾기에서 불러옴</strong>';document.getElementById('result-prompt').value=currentPrompt;let tip='';if(favs[idx].resultMode&&favs[idx].resultMode!=='GENERAL'){tip='⚠️ 개인정보 보호를 위해 관찰자료와 문체 예시문은 저장되지 않았습니다. 사용 전에 필요한 자료를 다시 입력해주세요.';}document.getElementById('result-tip').innerHTML=tip;showSection('result');checkFavoriteStatus();}
 function removeFavorite(idx){let favs=JSON.parse(localStorage.getItem('ai-teacher-favs')||'[]');favs.splice(idx,1);localStorage.setItem('ai-teacher-favs',JSON.stringify(favs));renderFavorites();showToast('삭제했습니다');}
 
