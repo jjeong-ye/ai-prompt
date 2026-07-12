@@ -358,7 +358,7 @@ body.dark .refine-btns button,body.dark .diagnose-btns button{background:#16213e
 <p class="main-subtitle u-mb-2" >중학교 교사를 위한 수업·평가·학교생활 AI 프롬프트 제작 도구</p>
 <p style="font-size:0.85rem;color:var(--gray-400);margin-top:0;margin-bottom:20px;">학교 일만 맡기기엔 너무 아깝죠? 여행·일상·취미 등 다른 프롬프트도 만들 줄 알아요 😎</p>
 <div class="input-wrapper">
-<textarea id="main-input" class="main-textarea" enterkeyhint="go" aria-describedby="main-input-shortcut" placeholder="예: 중2 정보 활동지 만들어줘."></textarea>
+<textarea id="main-input" class="main-textarea" enterkeyhint="go" aria-describedby="main-input-shortcut" placeholder="예 : 중2 정보 활동지 만들어줘."></textarea>
 <p id="main-input-shortcut" class="input-shortcut">Enter로 생성 · Shift+Enter로 줄바꿈</p>
 <div style="margin:10px 0;text-align:left;">
 <label style="display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--gray-600);cursor:pointer;">
@@ -1936,7 +1936,7 @@ function initPlaceholderRotation(){
     el.addEventListener('input', function(){ if (el.value !== '') stop(); });
     start();
   }
-  setupRotation('main-input', ['예: 중2 정보 활동지 만들어줘.','예: 제주도 여행 계획 짜줘.','예: 회의록 정리해줘.','예: A, B 물건 비교해줘.'], 2800);
+  setupRotation('main-input', ['예 : 중2 정보 활동지 만들어줘.','예 : 제주도 여행 계획 짜줘.','예 : 회의록 정리해줘.','예 : A, B 물건 비교해줘.'], 2800);
   setupRotation('refine-custom-input', ['직접 요청: 예) 2학기 기말고사 범위에 맞춰줘','직접 요청: 예) 우리 학교는 블록타임제라 80분 수업이야','직접 요청: 예) 특수학급 학생도 참여할 수 있게 바꿔줘'], 2800);
 }
 
