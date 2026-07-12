@@ -2554,7 +2554,7 @@ function resolveRecordSelectValue(value){if(value==="자율·자치/자율활동
 // --- 메타 정보 렌더링 ---
 function renderRecordMeta(type){const ctx=getRecordContext(type);const box=document.getElementById('record-meta-box');if(!box)return;if(ctx.maxChars===0){box.innerHTML=`<p style="font-size:0.85rem;"><strong>📋 ${ctx.neisField}</strong></p><p style="font-size:0.8rem;color:var(--gray-500);">기재형 항목 — 정해진 서식에 따라 입력</p>`;box.classList.remove('hidden');return;}box.innerHTML=`<p style="font-size:0.85rem;"><strong>📋 ${ctx.neisField}</strong></p><p style="font-size:0.85rem;">입력 주체: <strong>${ctx.owner||'담당교사'}</strong> | 글자수: <strong>${ctx.maxChars}자</strong> / <strong>${ctx.maxBytes||ctx.maxChars*3}Byte</strong> | 종결: ${ctx.endingType}</p><ul class="record-meta-list"><li><strong>목적:</strong> ${ctx.purpose}</li><li><strong>핵심 요소:</strong> ${ctx.keyElements.join(', ')}</li></ul>`;box.classList.remove('hidden');}
 // === 파일 상태 ===
-window._recordFileBasedState={activityFiles:[],formatFiles:[],outputTemplateFiles:[]};
+window._recordFileBasedState={activityFiles:[],outputTemplateFiles:[]};
 
 function handleRecordPromptFileDragOver(event){event.preventDefault();event.currentTarget.classList.add("dragover");}
 function handleRecordPromptFileDragLeave(event){event.currentTarget.classList.remove("dragover");}
@@ -2562,7 +2562,7 @@ function handleRecordPromptActivityFileDrop(event){event.preventDefault();event.
 function handleRecordPromptActivityFileSelect(event){addRecordPromptActivityFiles(Array.from(event.target.files||[]));}
 function addRecordPromptActivityFiles(files){window._recordFileBasedState.activityFiles=files;renderRecordPromptFileList("activity");}
 function formatFileSize(size){if(size<1024)return size+'B';if(size<1024*1024)return(size/1024).toFixed(1)+'KB';return(size/(1024*1024)).toFixed(1)+'MB';}
-function renderRecordPromptFileList(kind){const state=window._recordFileBasedState||{activityFiles:[],formatFiles:[]};const files=kind==="activity"?state.activityFiles:state.formatFiles;const boxId=kind==="activity"?"record-prompt-activity-file-list":"record-prompt-format-file-list";const box=document.getElementById(boxId);if(!box)return;if(!files.length){box.classList.add("hidden");box.innerHTML="";return;}box.classList.remove("hidden");box.innerHTML=`<p><strong>${kind==="activity"?"활동파일":"출력형식파일"} ${files.length}개 선택됨</strong></p><ul style="padding-left:18px;margin-top:6px;">${files.map(file=>`<li>${escapeHtml(file.name)} (${formatFileSize(file.size)})</li>`).join("")}</ul>`;}
+function renderRecordPromptFileList(kind){const state=window._recordFileBasedState||{activityFiles:[]};const files=state.activityFiles;const box=document.getElementById("record-prompt-activity-file-list");if(!box)return;if(!files.length){box.classList.add("hidden");box.innerHTML="";return;}box.classList.remove("hidden");box.innerHTML=`<p><strong>활동파일 ${files.length}개 선택됨</strong></p><ul style="padding-left:18px;margin-top:6px;">${files.map(file=>`<li>${escapeHtml(file.name)} (${formatFileSize(file.size)})</li>`).join("")}</ul>`;}
 // ===== 생기부 통합 제작 함수 =====
 function switchRecordTab(tab) {
   const writePanel = document.getElementById('record-write-panel');
@@ -2648,7 +2648,7 @@ function handleRecordTemplateFileSelect(event) {
 
 function generateUnifiedRecordPrompt() {
   const input = document.getElementById('record-input')?.value?.trim() || '';
-  const fileState = window._recordFileBasedState || {activityFiles:[], formatFiles:[]};
+  const fileState = window._recordFileBasedState || {activityFiles:[]};
   const hasFile = fileState.activityFiles && fileState.activityFiles.length > 0;
   if (!input && !hasFile) { showToast('학생별 관찰 근거가 담긴 활동자료를 직접 입력하거나 파일을 선택해주세요.'); return; }
   // 항목 결정
@@ -2922,7 +2922,7 @@ let isRecordPrompt=false;
 let currentResultMode = 'GENERAL';
 function setResultMode(mode) {
   currentResultMode = mode;
-  isRecordPrompt = (mode === 'RECORD_DRAFT' || mode === 'TRAFFIC_REVIEW' || mode === 'CPR_REVIEW' || mode === 'FINAL_RECORD_CHECK');
+  isRecordPrompt = (mode === 'RECORD_DRAFT' || mode === 'TRAFFIC_REVIEW' || mode === 'CPR_REVIEW' || mode === 'FINAL_RECORD_CHECK' || mode === 'BIAS_REVIEW');
 }
 
 // ===== 12. 파일 확장자 실제 검증 =====
@@ -2942,21 +2942,6 @@ return false;
 return true;
 }
 
-// ===== 11. 100행 또는 45,000자 초과 자동 분할 =====
-function shouldAutoSplit(rows,colIndex){
-const MAX_ROWS=100;const MAX_CHARS=45000;
-const dataRows=rows.slice(1);
-if(dataRows.length>MAX_ROWS)return{split:true,reason:`데이터가 ${dataRows.length}행으로 ${MAX_ROWS}행 제한을 초과합니다.`,chunks:splitRows(dataRows,MAX_ROWS)};
-let totalChars=0;
-dataRows.forEach(row=>{totalChars+=(String(row[colIndex]||"")).length;});
-if(totalChars>MAX_CHARS)return{split:true,reason:`총 ${totalChars.toLocaleString()}자로 ${MAX_CHARS.toLocaleString()}자 제한을 초과합니다.`,chunks:splitRows(dataRows,MAX_ROWS)};
-return{split:false};
-}
-function splitRows(dataRows,chunkSize){
-const chunks=[];
-for(let i=0;i<dataRows.length;i+=chunkSize){chunks.push(dataRows.slice(i,i+chunkSize));}
-return chunks;
-}
 
 // ===== 8. AI 생성 생기부 문장 직접 입력 문맥 검사 =====
 function checkAIGeneratedContext(text,item){
@@ -2986,7 +2971,7 @@ return warnings;
 }
 
 // ===== 🚦 이거 써도 되나요? =====
-function generateBiasCheckFromPanel(){const text=document.getElementById('bias-check-input').value.trim();const rawItem=document.getElementById('bias-check-item').value;const item=resolveRecordSelectValue(rawItem);if(!text){showToast('검사할 문장을 입력해주세요');return;}const ctx=getRecordContext(item);const prompt=`너는 생기부 기재요령과 교육적 공정성에 정통한 전문가야.\n\n다음 "${item}" 항목 문장에서 편향표현, 부적절 표현, 개선점을 검사해줘.\n\n[항목 정보]\n- 항목: ${item}\n- NEIS 필드: ${ctx.neisField}\n- 목적: ${ctx.purpose}\n- 글자수 제한: ${ctx.maxChars}자\n- NEIS Byte 제한: ${ctx.maxBytes||ctx.maxChars*3}Byte\n\n[검사할 문장 시작]\n${text}\n[검사할 문장 끝]\n\n[검사 항목]\n1. 성별 편향 표현 (예: "여학생답게", "남자답게")\n2. 능력주의적 서열화 (예: "반에서 가장", "뛰어난 리더")\n3. 결과 중심 vs 과정 중심 (구체적 행동이 드러나는가?)\n4. 단정적 일반화 (예: "항상", "모든 면에서")\n5. 사교육 연상 표현 (예: 특정 학원·프로그램명)\n6. 관찰 근거 부족 (교사가 실제로 볼 수 없는 내용)\n7. 가족 배경 암시 (부모 직업·경제적 지위 암시)\n8. 교외 활동·스펙 기재 (교외 대회, 자격증, 해외 활동)\n9. 글자수와 NEIS Byte 제한을 넘는지 확인\n10. 기재금지 표현이 남아 있는지 확인\n\n[출력 형식]\n| 번호 | 원문 표현 | 문제 유형 | 수정 제안 | 글자수/Byte 확인 |\n| --- | --- | --- | --- | --- |\n(문제없으면 "검사 통과 ✅" 표시)\n\n마지막에 전체 수정본을 한 번 더 작성해줘.`;currentPrompt=prompt;currentInput='생기부 최종·편향 점검 프롬프트';setResultMode('FINAL_RECORD_CHECK');document.getElementById('result-intent').innerHTML='<strong>의도 해석:</strong> 생기부 문장의 편향표현과 부적절 표현을 AI로 검사하기 위한 프롬프트입니다.';document.getElementById('result-prompt').value=prompt;document.getElementById('result-tip').innerHTML='💡 이 프롬프트로 문장의 편향성과 공정성을 종합 점검받을 수 있습니다.';showSection('result');setResultReturnTarget("record","bias-check-panel");updateResultBackButton();}
+function generateBiasCheckFromPanel(){const text=document.getElementById('bias-check-input').value.trim();const rawItem=document.getElementById('bias-check-item').value;const item=resolveRecordSelectValue(rawItem);if(!text){showToast('검사할 문장을 입력해주세요');return;}const ctx=getRecordContext(item);const prompt=`너는 생기부 기재요령과 교육적 공정성에 정통한 전문가야.\n\n다음 "${item}" 항목 문장에서 편향표현, 부적절 표현, 개선점을 검사해줘.\n\n[항목 정보]\n- 항목: ${item}\n- NEIS 필드: ${ctx.neisField}\n- 목적: ${ctx.purpose}\n- 글자수 제한: ${ctx.maxChars}자\n- NEIS Byte 제한: ${ctx.maxBytes||ctx.maxChars*3}Byte\n\n[검사할 문장 시작]\n${text}\n[검사할 문장 끝]\n\n[검사 항목]\n1. 성별 편향 표현 (예: "여학생답게", "남자답게")\n2. 능력주의적 서열화 (예: "반에서 가장", "뛰어난 리더")\n3. 결과 중심 vs 과정 중심 (구체적 행동이 드러나는가?)\n4. 단정적 일반화 (예: "항상", "모든 면에서")\n5. 사교육 연상 표현 (예: 특정 학원·프로그램명)\n6. 관찰 근거 부족 (교사가 실제로 볼 수 없는 내용)\n7. 가족 배경 암시 (부모 직업·경제적 지위 암시)\n8. 교외 활동·스펙 기재 (교외 대회, 자격증, 해외 활동)\n9. 글자수와 NEIS Byte 제한을 넘는지 확인\n10. 기재금지 표현이 남아 있는지 확인\n\n[출력 형식]\n| 번호 | 원문 표현 | 문제 유형 | 수정 제안 | 글자수/Byte 확인 |\n| --- | --- | --- | --- | --- |\n(문제없으면 "검사 통과 ✅" 표시)\n\n마지막에 전체 수정본을 한 번 더 작성해줘.`;currentPrompt=prompt;currentInput='생기부 편향 검사 프롬프트';setResultMode('BIAS_REVIEW');document.getElementById('result-intent').innerHTML='<strong>의도 해석:</strong> 생기부 문장의 편향표현과 부적절 표현을 AI로 검사하기 위한 프롬프트입니다.';document.getElementById('result-prompt').value=prompt;document.getElementById('result-tip').innerHTML='💡 이 프롬프트로 문장의 편향성과 공정성을 종합 점검받을 수 있습니다.';showSection('result');setResultReturnTarget("record","bias-check-panel");updateResultBackButton();}
 
 // ===== 🚦 통합 실행 함수 =====
 function runTrafficIntegratedCheck(){
@@ -3053,7 +3038,6 @@ fileRows.push({rowNumber:r+1,originalText:originalText,detected:detected,status:
 state.checkedRows=fileRows;state.checkedItem=item;
 }
 }
-window._trafficDirectState={item:item,checkedRows:directRows};
 // 신호등 결과 렌더
 renderTrafficDirectResult(directRows,item);
 if(fileRows.length>0){
@@ -3531,7 +3515,6 @@ if(fileResult){fileResult.innerHTML="";fileResult.classList.add("hidden");}
 if(rowResult){rowResult.innerHTML="";rowResult.classList.add("hidden");}
 if(promptResult){promptResult.innerHTML="";promptResult.classList.add("hidden");}
 currentPrompt="";currentInput="";
-window._trafficDirectState={item:"",checkedRows:[]};
 window._trafficWorkbookState.checkedRows=[];
 window._trafficWorkbookState.checkedItem="";
 window._trafficChunkState={currentIndex:0,totalParts:1,nonEmptyRows:[],chunks:[],item:""};
@@ -3561,7 +3544,6 @@ if(promptResult){promptResult.innerHTML="";promptResult.classList.add("hidden");
 currentPrompt="";currentInput="";
 window._trafficWorkbookState={fileName:"",workbook:null,sheetNames:[],activeSheetName:"",rows:[],headers:[],selectedColumn:"",selectedColumnIndex:-1,checkedRows:[],checkedItem:"",studentColumnIndex:-1,studentColumnName:""};
 window._trafficChunkState={currentIndex:0,totalParts:1,nonEmptyRows:[],chunks:[],item:""};
-window._trafficDirectState={item:"",checkedRows:[]};
 if(showMessage!==false)showToast("파일 검사 내용이 초기화되었습니다");
 }
 function resetTrafficCheck(){
@@ -3606,7 +3588,7 @@ resultDiv.classList.remove('hidden');resultDiv.innerHTML=results.map(r=>`<div cl
 
 function generateBiasCheck(){const text=document.getElementById('final-check-input').value.trim();const rawItem=document.getElementById('final-check-item').value;const item=resolveRecordSelectValue(rawItem);if(!text){showToast('점검할 문장을 입력해주세요');return;}
 const ctx=getRecordContext(item);const prompt=`너는 생기부 기재요령과 교육적 공정성에 정통한 전문가야.\n\n다음 "${item}" 항목 문장에서 편향표현, 부적절 표현, 개선점을 검사해줘.\n\n[항목 정보]\n- 항목: ${item}\n- NEIS 필드: ${ctx.neisField}\n- 목적: ${ctx.purpose}\n- 글자수 제한: ${ctx.maxChars}자\n- NEIS Byte 제한: ${ctx.maxBytes||ctx.maxChars*3}Byte\n\n[검사할 문장 시작]\n${text}\n[검사할 문장 끝]\n\n[검사 항목]\n1. 성별 편향 표현 (예: "여학생답게", "남자답게")\n2. 능력주의적 서열화 (예: "반에서 가장", "뛰어난 리더")\n3. 결과 중심 vs 과정 중심 (구체적 행동이 드러나는가?)\n4. 단정적 일반화 (예: "항상", "모든 면에서")\n5. 사교육 연상 표현 (예: 특정 학원·프로그램명)\n6. 관찰 근거 부족 (교사가 실제로 볼 수 없는 내용)\n7. 가족 배경 암시 (부모 직업·경제적 지위 암시)\n8. 교외 활동·스펙 기재 (교외 대회, 자격증, 해외 활동)\n9. 글자수와 NEIS Byte 제한을 넘는지 확인\n10. 기재금지 표현이 남아 있는지 확인\n\n[출력 형식]\n| 번호 | 원문 표현 | 문제 유형 | 수정 제안 | 글자수/Byte 확인 |\n| --- | --- | --- | --- | --- |\n(문제없으면 "검사 통과 ✅" 표시)\n\n마지막에 전체 수정본을 한 번 더 작성해줘.`;
-currentPrompt=prompt;currentInput='생기부 최종·편향 점검 프롬프트';setResultMode('FINAL_RECORD_CHECK');document.getElementById('result-intent').innerHTML='<strong>의도 해석:</strong> 생기부 문장의 편향표현과 부적절 표현을 AI로 검사하기 위한 프롬프트입니다.';document.getElementById('result-prompt').value=prompt;document.getElementById('result-tip').innerHTML='💡 이 프롬프트로 문장의 편향성과 공정성을 종합 점검받을 수 있습니다.';showSection('result');setResultReturnTarget("record","final-check-panel");updateResultBackButton();}
+currentPrompt=prompt;currentInput='생기부 편향 검사 프롬프트';setResultMode('BIAS_REVIEW');document.getElementById('result-intent').innerHTML='<strong>의도 해석:</strong> 생기부 문장의 편향표현과 부적절 표현을 AI로 검사하기 위한 프롬프트입니다.';document.getElementById('result-prompt').value=prompt;document.getElementById('result-tip').innerHTML='💡 이 프롬프트로 문장의 편향성과 공정성을 종합 점검받을 수 있습니다.';showSection('result');setResultReturnTarget("record","final-check-panel");updateResultBackButton();}
 
 // ===== 문장 CPR =====
 function generateCPRFromPanel(){
