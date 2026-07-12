@@ -564,7 +564,7 @@ body.dark .refine-btns button,body.dark .diagnose-btns button{background:#16213e
 <strong>📋 적용 기준</strong><br>
 적용 기준: <strong>2026학년도 학교생활기록부 기재요령(중학교)</strong><br>
 근거 훈령: <strong>교육부훈령 제555호</strong> · 2026.03.01 시행<br>
-공식 포털 확인일: <strong>2026.07.11</strong>
+공식 포털 확인일: <strong>2026.07.12</strong>
 </div>
 <!-- 내부 탭: 작성 / 검토 -->
 <div role="tablist" style="display:flex;gap:4px;margin-bottom:20px;border-bottom:2px solid var(--gray-100);padding-bottom:0;">
@@ -1174,10 +1174,12 @@ function closeCopyConfirmModal() {
 const RECORD_POLICY_META = {
   schoolYear: 2026,
   documentTitle: "2026학년도 학교생활기록부 기재요령(중학교)",
+  documentDate: "2026-02-19",
   decreeTitle: "학교생활기록 작성 및 관리지침",
   decreeNumber: "교육부훈령 제555호",
+  decreeDate: "2026-02-12",
   effectiveDate: "2026-03-01",
-  verifiedDate: "2026-07-11",
+  verifiedDate: "2026-07-12",
   verifiedSource: "교육부 학교생활기록부 종합지원포털"
 };
 
@@ -1210,8 +1212,8 @@ const SCHOOL_RECORD_PROFILE = {
     negativeRecordLogRequired: true       // 부정적 행동특성 기재 시 관련 누가기록을 교육정보시스템에 전산 관리
   },
   readingActivity: {
-    commonMaxChars: 250,                  // 독서활동 공통 250자 (국가 공식기준 250자와 동일)
-    perSubjectMaxCharsFirstSemester: 120  // 과목당 120자(1학기) — 국가 공식기준(과목당 최대 500자)보다 엄격한 학교 자체 기준
+    commonMaxChars: 250,                  // 독서활동 공통 250자 — 국가 공식기준(공통 500자)보다 엄격한 학교 자체 기준
+    perSubjectMaxCharsFirstSemester: 120  // 과목당 120자(1학기) — 국가 공식기준(과목별 250자)보다 엄격한 학교 자체 기준
   },
   writingCheck: {
     spellCheckRequired: true,
@@ -2802,7 +2804,7 @@ const itemContext = {
   "개인별 성장":{purpose:"한 학기 동안의 학습 성장 과정과 변화를 종합적으로 기록",maxChars:500,maxBytes:1500,endingType:"명사형",group:"교과",neisField:"교과학습발달상황-개인별 성장 및 발달 특이사항",owner:"학급담임교사",keyElements:["성장 과정","변화","노력","자기주도성"]},
   "행동특성 및 종합의견":{purpose:"학년 동안 담임이 지속 관찰한 행동 특성과 인성적 성장을 기록",maxChars:300,maxBytes:900,endingType:"명사형",group:"행동",neisField:"행동특성 및 종합의견",owner:"학급담임교사",keyElements:["인성","대인관계","자기관리","성장 가능성"]},
   "출결 특이사항":{purpose:"출결 관련 특이사항(장기결석 사유, 개근 등)을 기록",maxChars:500,maxBytes:1500,endingType:"명사형",group:"행동",neisField:"출결상황-특기사항",owner:"학급담임교사",keyElements:["출결 사유","성실성"]},
-  "독서활동":{purpose:"독서 이력과 독서 관련 성장, 독후 활동을 기록",maxChars:500,maxBytes:1500,endingType:"명사형",group:"독서",neisField:"독서활동상황",owner:"학급담임교사",keyElements:["독서량","독서 분야","깊이 있는 이해","독서 태도"]},
+  "독서활동":{purpose:"학기별로 학생이 읽은 책의 제목과 저자를 도서명(저자) 형식으로 기록",maxChars:500,maxBytes:1500,endingType:"명사형",group:"독서",neisField:"독서활동상황",owner:"교과담당교사 또는 학급담임교사",keyElements:["도서명","저자","증빙자료","ISBN 등재 여부"]},
   "자유학기활동":{purpose:"자유학기 주제선택·예술·체육·동아리·진로탐색 활동을 기록",maxChars:1000,maxBytes:3000,endingType:"명사형",group:"자유학기",neisField:"자유학기활동상황",owner:"해당 활동별 담당교사",keyElements:["적극적 참여","흥미 탐색","협력","자기주도성"]},
   "자유학기 진로탐색활동":{purpose:"자유학기 진로탐색활동의 활동 과정, 참여도, 흥미도, 성장 정도를 기록",maxChars:1000,maxBytes:3000,endingType:"명사형",group:"자유학기",neisField:"자유학기활동상황-진로탐색활동",owner:"해당 활동별 담당교사",keyElements:["활동 과정","참여도","흥미도","성장 정도"]},
   "자유학기 주제선택활동":{purpose:"자유학기 주제선택활동의 탐구 과정, 참여도, 태도 변화, 성장 정도를 기록",maxChars:1000,maxBytes:3000,endingType:"명사형",group:"자유학기",neisField:"자유학기활동상황-주제선택활동",owner:"해당 활동별 담당교사",keyElements:["탐구 과정","참여도","태도 변화","성장 정도"]},
@@ -2811,7 +2813,7 @@ const itemContext = {
   "수상경력":{purpose:"교내 수상 명칭, 등급, 수상 연월일을 정확히 기재",maxChars:0,maxBytes:0,endingType:"기재형",group:"특수",neisField:"수상경력",owner:"담당교사",keyElements:["수상명","등급","참가대상"]},
   "자격증·인증":{purpose:"자격증 및 인증 취득 상황을 기재",maxChars:0,maxBytes:0,endingType:"기재형",group:"특수",neisField:"자격증 및 인증취득상황",owner:"담당교사",keyElements:["자격증명","취득일","발급기관"]},
   "영재·발명교육":{purpose:"영재교육원 이수, 발명교육 이수 실적을 기록",maxChars:500,maxBytes:1500,endingType:"명사형",group:"특수",neisField:"교과학습발달상황-비고",owner:"담당교사",keyElements:["이수 기간","교육 내용","성취 수준"]},
-  "학적사항 특기":{purpose:"전출입, 유예, 면제 등 학적 관련 특기사항을 기록",maxChars:200,maxBytes:600,endingType:"명사형",group:"특수",neisField:"학적사항-특기사항",owner:"담당교사",keyElements:["전출입","사유","기간"]},
+  "학적사항 특기":{purpose:"전출입, 유예, 면제 등 학적 관련 특기사항을 기록",maxChars:500,maxBytes:1500,endingType:"명사형",group:"특수",neisField:"인적·학적사항-특기사항",owner:"담당교사",keyElements:["전출입","사유","기간"]},
 };
 // ===== 항목별 전용 규칙 =====
 function getRecordItemRules(type) {
