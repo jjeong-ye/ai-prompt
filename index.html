@@ -1372,6 +1372,50 @@ function getRecordEvaluationOptions(type, scope) {
     scope: scope || "common"
   };
 }
+// ===== 공통 판정 통합 함수 (13단계) =====
+function evaluateTrafficSentence(text,item,options){
+  if(!text||!text.trim())return[];
+  var opts=options||getRecordEvaluationOptions(item);
+  // 1. detectTrafficTerms 결과 수집
+  var trafficDetected=detectTrafficTerms(text,item);
+  // 2. evaluateRecordText 결과 수집
+  var evalResults=evaluateRecordText(text,item,opts);
+  // 3. 두 결과를 공통 구조로 변환
+  var unified=[];
+  evalResults.forEach(function(j){unified.push({ruleId:j.ruleId,severity:j.severity,expressions:[j.expression],category:j.reason,reason:j.reason,alternative:j.alternative,teacherCheck:j.teacherCheck,sourceLevel:j.sourceLevel,basisType:j.sourceLevel==='school'?'학교 입력 권장':'공식 기재 기준',source:j.source});});
+  // trafficDetected 중 evaluateRecordText에서 이미 잡은 것과 겹치지 않는 것만 추가
+  trafficDetected.forEach(function(d){var covered=unified.some(function(u){return u.expressions.indexOf(d.term)>=0||u.expressions.some(function(e){return e&&d.term&&(e.includes(d.term)||d.term.includes(e));});});if(!covered){unified.push({ruleId:'traffic-'+d.term,severity:d.status==='불가'?SEVERITY.PROHIBITED:d.status==='일반화필요'?SEVERITY.REVISE:SEVERITY.CAUTION,expressions:[d.term],category:d.category||'',reason:d.reason||'',alternative:d.alt||'',teacherCheck:'실제 관찰 사실 확인',sourceLevel:(d.basisType&&d.basisType.includes('학교'))?'school':'national',basisType:d.basisType||'공식 기재 기준',source:d.basisType||'공식 기재 기준'});}});
+  // 4. 의미 중복 정규화
+  return normalizeTrafficJudgments(unified);
+}
+function normalizeTrafficJudgments(judgments){
+  if(!judgments||!judgments.length)return judgments;
+  var sevOrder=[SEVERITY.INFO,SEVERITY.CAUTION,SEVERITY.REVISE,SEVERITY.PROHIBITED];
+  // 복합 규칙 우선: compound가 있으면 관련 하위 제거 + 발견 표현 병합
+  var compounds=judgments.filter(function(j){return j.ruleId&&j.ruleId.startsWith('compound-');});
+  if(compounds.length){
+    var removeIds={};
+    compounds.forEach(function(c){
+      if(c.ruleId==='compound-어학시험점수기재금지'){removeIds['pattern-점수 직접 노출']=c;removeIds['forbidden-토익']=c;removeIds['forbidden-TOEIC']=c;removeIds['forbidden-토플']=c;removeIds['forbidden-TOEFL']=c;removeIds['forbidden-텝스']=c;removeIds['forbidden-오픽']=c;removeIds['forbidden-JLPT']=c;removeIds['forbidden-HSK']=c;}
+      if(c.ruleId==='compound-자격증취득기재금지'){removeIds['forbidden-한국사능력검정']=c;removeIds['forbidden-한자능력검정']=c;removeIds['forbidden-컴활']=c;removeIds['forbidden-정보처리기사']=c;removeIds['forbidden-자격증']=c;removeIds['pattern-등급 직접 노출']=c;}
+      if(c.ruleId==='compound-대학명진학기재금지'){removeIds['forbidden-서울대']=c;removeIds['forbidden-연세대']=c;removeIds['forbidden-고려대']=c;removeIds['forbidden-카이스트']=c;removeIds['forbidden-포스텍']=c;}
+      if(c.ruleId==='compound-교외수상기재금지'){removeIds['forbidden-수상']=c;removeIds['forbidden-금상']=c;removeIds['forbidden-올림피아드']=c;removeIds['forbidden-교외 대회']=c;}
+    });
+    judgments=judgments.filter(function(j){
+      if(j.ruleId.startsWith('compound-'))return true;
+      var parent=removeIds[j.ruleId];
+      if(parent){// 발견 표현 병합
+        if(j.expressions)j.expressions.forEach(function(e){if(parent.expressions.indexOf(e)<0)parent.expressions.push(e);});
+        return false;}
+      // traffic- 접두사 결과도 compound에 흡수
+      if(j.ruleId.startsWith('traffic-')){var expr=j.expressions&&j.expressions[0]||'';var absorbed=compounds.some(function(c){return c.expressions.some(function(ce){return ce&&expr&&(ce.includes(expr)||expr.includes(ce));});});if(absorbed)return false;}
+      return true;
+    });
+  }
+  // ruleId 중복 제거 (같은 ruleId는 가장 높은 심각도 유지, 표현 병합)
+  var seen={};var deduped=[];judgments.forEach(function(j){if(!seen[j.ruleId]){seen[j.ruleId]=j;deduped.push(j);}else{var existing=seen[j.ruleId];if(j.expressions)j.expressions.forEach(function(e){if(existing.expressions.indexOf(e)<0)existing.expressions.push(e);});if(sevOrder.indexOf(j.severity)>sevOrder.indexOf(existing.severity)){existing.severity=j.severity;}}});
+  return deduped;
+}
 // ===== getRecordItemRules: 스키마 기반 생성 (기존 형식 보존) =====
 
 // 생기부 항목 선택에 따라 우리 학교 자체 방침 안내문을 생성 (없으면 빈 문자열)
@@ -3055,10 +3099,9 @@ let directRows=[];
 if(hasText){
 const lines=text.split(/\r?\n/).map(function(l){return l.trim();}).filter(function(l){return l.length>0;});
 lines.forEach(function(line,idx){
-const detected=detectTrafficTerms(line,item);
-// 공통 판정 통합: evaluateRecordText 결과를 detected에 병합
-var commonJudgments=evaluateRecordText(line,item,getRecordEvaluationOptions(item));
-commonJudgments.forEach(function(j){if(!detected.some(function(d){return d.term===j.expression;})){detected.push({term:j.expression,category:j.reason,status:j.severity===SEVERITY.PROHIBITED?'불가':j.severity===SEVERITY.REVISE?'일반화필요':'주의',reason:j.reason,alt:j.alternative,basisType:j.sourceLevel==='school'?'학교 입력 권장':'공식 기재 기준'});}});
+// 공통 판정 통합 경로
+var unified=evaluateTrafficSentence(line,item);
+var detected=unified.map(function(u){return{term:u.expressions.join(', '),category:u.category,status:u.severity===SEVERITY.PROHIBITED?'불가':u.severity===SEVERITY.REVISE?'일반화필요':'주의',reason:u.reason,alt:u.alternative,basisType:u.basisType||'공식 기재 기준'};});
 const statusInfo=getTrafficStatusFromDetected(detected);
 directRows.push({rowNumber:idx+1,originalText:line,detected:detected,status:statusInfo.label,statusIcon:statusInfo.icon,statusKey:statusInfo.key,source:'direct',studentLabel:"\uC9C1\uC811 \uC785\uB825 "+(idx+1)+"\uBC88"});
 });
@@ -3084,10 +3127,9 @@ const row=rows[r]||[];const originalText=String(row[colIndex]||"").trim();
 const studentValue=studentColIdx>=0?String(row[studentColIdx]||"").trim():"";
 const displayStudent=studentColIdx>=0&&studentValue?studentValue:("\uC6D0\uBCF8 "+(r+1)+"\uD589");
 if(!originalText){fileRows.push({rowNumber:r+1,originalText:originalText,detected:[],status:"\uBE48\uCE78",statusIcon:"\u26AA",statusKey:"empty",source:'file',studentLabel:displayStudent,categories:"",alternatives:"",memo:"\uAC80\uD1A0\uD560 \uBB38\uC7A5\uC774 \uBE44\uC5B4 \uC788\uC74C"});continue;}
-const detected=detectTrafficTerms(originalText,item);
-// 공통 판정 통합
-var commonJudgments=evaluateRecordText(originalText,item,getRecordEvaluationOptions(item));
-commonJudgments.forEach(function(j){if(!detected.some(function(d){return d.term===j.expression;})){detected.push({term:j.expression,category:j.reason,status:j.severity===SEVERITY.PROHIBITED?'불가':j.severity===SEVERITY.REVISE?'일반화필요':'주의',reason:j.reason,alt:j.alternative,basisType:j.sourceLevel==='school'?'학교 입력 권장':'공식 기재 기준'});}});
+// 공통 판정 통합 경로
+var unified=evaluateTrafficSentence(originalText,item);
+var detected=unified.map(function(u){return{term:u.expressions.join(', '),category:u.category,status:u.severity===SEVERITY.PROHIBITED?'불가':u.severity===SEVERITY.REVISE?'일반화필요':'주의',reason:u.reason,alt:u.alternative,basisType:u.basisType||'공식 기재 기준'};});
 const statusInfo=getTrafficStatusFromDetected(detected);
 fileRows.push({rowNumber:r+1,originalText:originalText,detected:detected,status:statusInfo.label,statusIcon:statusInfo.icon,statusKey:statusInfo.key,source:'file',studentLabel:displayStudent,categories:[...new Set(detected.map(function(d){return d.category;}).filter(Boolean))].join(", "),alternatives:detected.map(function(d){return d.alt;}).filter(Boolean).join(" / "),memo:detected.length?detected.map(function(d){return d.term+": "+(d.reason||d.alt||"");}).join(" | "):"\uADDC\uCE59\uD45C \uAE30\uC900 \uBC1C\uACAC \uC5C6\uC74C"});
 }
