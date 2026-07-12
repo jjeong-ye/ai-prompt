@@ -35,7 +35,7 @@
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;background:var(--gray-50);color:var(--gray-800);line-height:1.6;min-height:100vh;}
 .header{background:white;border-bottom:1px solid var(--gray-200);padding:12px 24px 0;position:sticky;top:0;z-index:100;}
 .header-inner{max-width:var(--max-width);margin:0 auto;display:flex;align-items:baseline;gap:12px;}
-.header-nav{max-width:var(--max-width);margin:0 auto;display:flex;gap:4px;padding-top:10px;overflow-x:auto;}
+.header-nav{max-width:var(--max-width);margin:0 auto;display:flex;justify-content:center;gap:4px;padding-top:10px;overflow-x:auto;}
 .header-nav a{padding:8px 14px;font-size:0.85rem;color:var(--gray-600);text-decoration:none;border-bottom:2px solid transparent;white-space:nowrap;transition:all 0.2s;}
 .header-nav a:hover{color:var(--primary);border-bottom-color:var(--primary);}
 .logo{font-size:1.4rem;font-weight:700;color:var(--primary);cursor:pointer;text-decoration:none;}
@@ -323,6 +323,13 @@ body.dark .sites-table th{background:#16213e;}
 body.dark .today-widget{background:linear-gradient(135deg,#4a3f8a 0%,#5a3070 100%);}
 body.dark .quick-btn,body.dark .subject-change-btn,body.dark .share-btn{background:#1a1a2e;}
 body.dark .refine-btns button,body.dark .diagnose-btns button{background:#16213e;}
+.traffic-item-change-dialog{background:var(--gray-50);color:var(--gray-800);}
+.traffic-item-change-dialog p{color:var(--gray-600);}
+.traffic-item-change-dialog h3{color:var(--gray-800);}
+body.dark .traffic-item-change-dialog{background:#1a1a2e;color:#f0f0ff;}
+body.dark .traffic-item-change-dialog p{color:#ccccee;}
+body.dark .traffic-item-change-dialog h3{color:#f0f0ff;}
+.stage14-public-hidden{display:none!important;}
 /* ===== 반복 인라인 스타일 정리용 공통 클래스 (값은 기존 인라인과 완전히 동일) ===== */
 .u-full-width{width:100%;}
 .u-center-clickable{text-align:center;cursor:pointer;}
@@ -348,17 +355,18 @@ body.dark .refine-btns button,body.dark .diagnose-btns button{background:#16213e
 </div>
 <nav class="header-nav">
 <a href="#" onclick="goHome();return false;">만들기</a>
-<a href="#" onclick="openSection('recipe');return false;">레시피북</a>
-<a href="#" onclick="openSection('prompt-guide');return false;">작성법</a>
+<a href="#" onclick="openSection('record');return false;">생기부제작소</a>
+<a href="#" class="stage14-public-hidden" onclick="openSection('recipe');return false;">레시피북</a>
+<a href="#" onclick="openSection('prompt-guide');return false;">프롬프트 작성법</a>
 <a href="#" onclick="openSection('ai-safety');return false;">안전사용</a>
-<a href="#" onclick="openSection('ai-sites');return false;">AI사이트</a>
-<a href="#" onclick="openSection('favorites');return false;">⭐즐겨찾기</a>
+<a href="#" onclick="openSection('ai-sites');return false;">AI 사이트</a>
+<a href="#" class="stage14-public-hidden" onclick="openSection('favorites');return false;">⭐즐겨찾기</a>
 </nav>
 </header>
 <main id="main-content">
 <!-- 홈 섹션 -->
 <section id="home-section" class="section active">
-<div id="today-widget" class="today-widget">
+<div id="today-widget" class="today-widget stage14-public-hidden">
 <div class="widget-header"><span class="widget-badge">오늘의 추천</span><button class="widget-close" onclick="toggleWidget()"><i class="ri-arrow-up-s-line"></i></button></div>
 <div class="widget-body" id="widget-body"><p id="widget-text"></p><button class="widget-btn" id="widget-btn" onclick="useRecommendation()">바로 만들기 <i class="ri-arrow-right-line"></i></button></div>
 </div>
@@ -392,7 +400,7 @@ body.dark .refine-btns button,body.dark .diagnose-btns button{background:#16213e
 </div>
 <div class="reverse-shortcut"><button class="reverse-shortcut-btn" onclick="openSection('reverse')"><i class="ri-swap-line"></i> 이미 있는 자료가 있나요? → 거꾸로 생성하기</button></div>
 </div>
-<div class="quick-buttons">
+<div class="quick-buttons stage14-public-hidden">
 <h3 class="section-label">빠른 선택</h3>
 <div class="quick-grid">
 <button class="quick-btn" onclick="quickSelect('포스터')" data-tip="안내 포스터, 안전수칙 포스터 등"><i class="ri-image-line"></i> 포스터</button>
@@ -406,17 +414,17 @@ body.dark .refine-btns button,body.dark .diagnose-btns button{background:#16213e
 <button class="quick-btn" onclick="quickSelect('체크리스트')" data-tip="점검표, 확인 목록, 준비물 리스트"><i class="ri-list-check-2"></i> 체크리스트</button>
 </div>
 </div>
-<div class="category-cards">
+<div class="category-cards stage14-public-hidden">
 <h3 class="section-label">제작소</h3>
 <div class="card-grid">
-<div class="category-card" onclick="openSection('school-life')"><i class="ri-school-line"></i><h4>학교생활 바로 제작소</h4><p>포스터·안내문·공지문·체크리스트</p></div>
-<div class="category-card" onclick="openSection('lesson')"><i class="ri-book-open-line"></i><h4>수업자료 제작소</h4><p>수업지도안·활동지·토론질문·모둠활동</p></div>
-<div class="category-card" onclick="openSection('evaluation')"><i class="ri-bar-chart-box-line"></i><h4>평가자료 제작소</h4><p>시험문항·수행평가·루브릭·피드백</p></div>
-<div class="category-card" onclick="openSection('record')"><i class="ri-file-user-line"></i><h4>생기부 제작소</h4><p>자율·진로·동아리·교과세특·행발</p></div>
+<div class="category-card stage14-public-hidden" onclick="openSection('school-life')"><i class="ri-school-line"></i><h4>학교생활 바로 제작소</h4><p>포스터·안내문·공지문·체크리스트</p></div>
+<div class="category-card stage14-public-hidden" onclick="openSection('lesson')"><i class="ri-book-open-line"></i><h4>수업자료 제작소</h4><p>수업지도안·활동지·토론질문·모둠활동</p></div>
+<div class="category-card stage14-public-hidden" onclick="openSection('evaluation')"><i class="ri-bar-chart-box-line"></i><h4>평가자료 제작소</h4><p>시험문항·수행평가·루브릭·피드백</p></div>
+<div class="category-card stage14-public-hidden" onclick="openSection('record')"><i class="ri-file-user-line"></i><h4>생기부 제작소</h4><p>자율·진로·동아리·교과세특·행발</p></div>
 </div>
 </div>
 
-<div id="recent-section" class="recent-section hidden"></div>
+<div id="recent-section" class="recent-section hidden stage14-public-hidden"></div>
 </section>
 <!-- 결과 섹션 -->
 <section id="result-section" class="section">
@@ -430,7 +438,7 @@ body.dark .refine-btns button,body.dark .diagnose-btns button{background:#16213e
 <div class="prompt-header">
 <span class="prompt-badge">완성형 프롬프트</span>
 <div class="prompt-actions">
-<button class="fav-btn" onclick="toggleFavorite()" id="fav-btn" title="즐겨찾기"><i class="ri-star-line"></i></button>
+<button class="fav-btn stage14-public-hidden" onclick="toggleFavorite()" id="fav-btn" title="즐겨찾기"><i class="ri-star-line"></i></button>
 <button class="copy-btn" onclick="requestPromptCopy()"><i class="ri-file-copy-line"></i> 복사하기</button>
 </div>
 </div>
@@ -459,7 +467,7 @@ body.dark .refine-btns button,body.dark .diagnose-btns button{background:#16213e
 </div>
 <p class="ai-open-note">복사한 프롬프트를 해당 사이트에 붙여넣으세요</p>
 
-<div class="refine-section">
+<div class="refine-section stage14-public-hidden">
 <div class="refine-tabs">
 <button class="refine-tab active" onclick="switchRefineTab('refine')">빠르게 바꾸기</button>
 <button class="refine-tab" onclick="switchRefineTab('diagnose')">뭐가 문제였나요?</button>
@@ -512,7 +520,7 @@ body.dark .refine-btns button,body.dark .diagnose-btns button{background:#16213e
 </div>
 </div>
 </div>
-<div class="reverse-section">
+<div class="reverse-section stage14-public-hidden">
 <button class="reverse-toggle" onclick="toggleReverse()"><i class="ri-swap-line"></i> 거꾸로 생성하기 (기존 자료 → 프롬프트)</button>
 <div id="reverse-panel" class="reverse-panel hidden">
 <p class="reverse-desc">이미 갖고 있는 자료가 있으신가요? 작년 활동지, 공문, 안내문 등을 붙여넣으면 프롬프트로 역변환합니다.</p>
@@ -520,7 +528,7 @@ body.dark .refine-btns button,body.dark .diagnose-btns button{background:#16213e
 <button class="reverse-btn" onclick="reverseGenerate()">프롬프트로 변환</button>
 </div>
 </div>
-<div class="subject-change">
+<div class="subject-change stage14-public-hidden">
 <button class="subject-change-btn" onclick="toggleSubjectChange()"><i class="ri-refresh-line"></i> 다른 과목으로 바꾸기</button>
 <div id="subject-change-panel" class="subject-panel hidden">
 <select id="subject-select" class="subject-select">
@@ -677,9 +685,9 @@ body.dark .refine-btns button,body.dark .diagnose-btns button{background:#16213e
 <div id="record-review-panel" role="tabpanel" aria-labelledby="record-tab-review" class="hidden">
 <div id="record-review-card-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
 <button type="button" class="category-card u-center-clickable" onclick="openRecordReviewTool('traffic')" ><i class="ri-traffic-light-line"></i><h4>이거 써도 되나요?</h4><p class="u-hint-text">기재 전 표현과 내용의 위험 신호를 점검합니다.</p></button>
-<button type="button" class="category-card u-center-clickable" onclick="openRecordReviewTool('cpr')" ><i class="ri-heart-pulse-line"></i><h4>문장 CPR</h4><p class="u-hint-text">기존 문장을 사실 범위 안에서 완성형 기록문으로 다듬습니다.</p></button>
-<button type="button" class="category-card u-center-clickable" onclick="openRecordReviewTool('final')" ><i class="ri-shield-check-line"></i><h4>붙여넣기 전 최종 점검</h4><p class="u-hint-text">누락, 위험 표현, 글자 수와 예상 Byte를 최종 확인합니다.</p></button>
-<button type="button" class="category-card u-center-clickable" onclick="openRecordReviewTool('bias')" ><i class="ri-scales-line"></i><h4>편향 표현 검사</h4><p class="u-hint-text">성별, 가정환경, 성격 등 문맥상 편향 표현을 검사합니다.</p></button>
+<button type="button" class="category-card u-center-clickable stage14-public-hidden" onclick="openRecordReviewTool('cpr')" ><i class="ri-heart-pulse-line"></i><h4>문장 CPR</h4><p class="u-hint-text">기존 문장을 사실 범위 안에서 완성형 기록문으로 다듬습니다.</p></button>
+<button type="button" class="category-card u-center-clickable stage14-public-hidden" onclick="openRecordReviewTool('final')" ><i class="ri-shield-check-line"></i><h4>붙여넣기 전 최종 점검</h4><p class="u-hint-text">누락, 위험 표현, 글자 수와 예상 Byte를 최종 확인합니다.</p></button>
+<button type="button" class="category-card u-center-clickable stage14-public-hidden" onclick="openRecordReviewTool('bias')" ><i class="ri-scales-line"></i><h4>편향 표현 검사</h4><p class="u-hint-text">성별, 가정환경, 성격 등 문맥상 편향 표현을 검사합니다.</p></button>
 </div>
 <!-- 각 검토 도구 영역 -->
 <div id="record-review-tool-area" class="hidden" style="margin-top:20px;">
@@ -775,8 +783,8 @@ body.dark .refine-btns button,body.dark .diagnose-btns button{background:#16213e
 <!-- 프롬프트 작성법 -->
 <section id="prompt-guide-section" class="section">
 <button class="back-btn" onclick="goHome()"><i class="ri-arrow-left-line"></i> 처음으로</button>
-<h2 class="section-title"><i class="ri-quill-pen-line"></i> 프롬프트 작성법</h2>
-<div class="guide-content">
+<h2 class="section-title" style="justify-content:center;"><i class="ri-quill-pen-line"></i> 프롬프트 작성법</h2>
+<div class="guide-content" style="max-width:700px;margin:0 auto;">
 <div class="formula-box"><h3>좋은 프롬프트 공식</h3>
 <div class="formula">
 <span class="formula-item">역할</span> +
@@ -811,7 +819,7 @@ body.dark .refine-btns button,body.dark .diagnose-btns button{background:#16213e
 <div class="traffic yellow"><h4>🟡 노란불 - 반드시 검토 후 사용</h4><ul><li>학습 자료 내용 (사실 확인 필요)</li><li>평가 문항 (정답 확인 필요)</li><li>학부모 안내문 (학교 방침 확인)</li><li>생기부 문장 (관찰 사실 확인)</li></ul></div>
 <div class="traffic red"><h4>🔴 빨간불 - 입력 금지</h4><ul><li>학생 이름·성적·상담 기록</li><li>건강 정보·가정환경</li><li>장애 진단명·검사 결과</li><li>특수교육대상자 개인정보</li><li>교사 개인정보·인사기록</li></ul></div>
 </div></div>
-<div class="safety-block"><h3>🔍 검토 도구</h3>
+<div class="safety-block stage14-public-hidden"><h3>🔍 검토 도구</h3>
 <p class="review-note">이 사이트에서 안 만든 글도 괜찮아요. 어디서든 가져온 텍스트를 붙여넣어 검토하세요.</p>
 <div id="ai-review-panel" class="review-panel active">
 <textarea id="ai-review-input" class="review-textarea" placeholder="검토할 AI 답변을 붙여넣으세요"></textarea>
@@ -1428,11 +1436,15 @@ function isUnreadableInput(text){
   if(/^([ㅋㅎㅠㅜ])\1{2,}$/.test(s.replace(/\s/g,'')))return{valid:false,type:"UNREADABLE_INPUT",reason:"의미를 해석할 수 없는 자판 오입력 또는 손상된 문장"};
   // 같은 문자 과도한 반복 (5회 이상 반복, 전체의 80% 이상)
   if(/^(.)\1{4,}$/.test(s.replace(/\s/g,'')))return{valid:false,type:"UNREADABLE_INPUT",reason:"의미를 해석할 수 없는 자판 오입력 또는 손상된 문장"};
-  // 영문 키보드 난타 (영문만 + 완성형 한글 없음 + 의미 있는 약어 아님)
-  var allowedAbbrs=/^(AI|UCC|PAPS|CCL|BY|NC|ND|SA|SNS|PPT|CT|IoT|SW|PBL|STEAM|IT|ICT|PDF|USB|URL|HTML|CSS|JS|PC|AP|QR|VR|AR|MR|XR|GPA|OECD|UNESCO|NEIS|EBS|TOEIC|TOEFL|IELTS|JLPT|HSK|OPIc)$/i;
-  if(/^[a-zA-Z\s]+$/.test(s)&&!allowedAbbrs.test(s.trim())&&s.trim().length>=4&&!/[가-힣]/.test(s)){
-    // 추가: 실제 영단어 패턴이 아닌지 확인 (모음 없으면 난타 가능성 높음)
-    if(!/[aeiouAEIOU]/.test(s))return{valid:false,type:"UNREADABLE_INPUT",reason:"의미를 해석할 수 없는 자판 오입력 또는 손상된 문장"};
+  // 영문 키보드 난타 (키보드 행 순서 연속 입력만 보수적 탐지)
+  var compact=s.replace(/\s/g,'').toLowerCase();
+  if(/^[a-z]+$/.test(compact)&&compact.length>=5){
+    var allowedAbbrs=/^(ai|ucc|paps|ccl|by|nc|nd|sa|sns|ppt|ct|iot|sw|pbl|steam|it|ict|pdf|usb|url|html|css|js|pc|ap|qr|vr|ar|mr|xr|gpa|oecd|unesco|neis|ebs|toeic|toefl|ielts|jlpt|hsk|opic|study|career|project)$/i;
+    if(!allowedAbbrs.test(compact)){
+      var keyboardWalks=["qwertyuiop","poiuytrewq","asdfghjkl","lkjhgfdsa","zxcvbnm","mnbvcxz"];
+      var isKeyboardWalk=keyboardWalks.some(function(row){return row.indexOf(compact)>=0||compact.indexOf(row)>=0;});
+      if(isKeyboardWalk)return{valid:false,type:"UNREADABLE_INPUT",reason:"의미를 해석할 수 없는 자판 오입력 또는 손상된 문장"};
+    }
   }
   return{valid:true,type:null,reason:null};
 }
@@ -2796,10 +2808,28 @@ function readFileContent(file){const validExt=['.txt','.md','.csv','.html','.htm
 // ===== 생기부 제작소 =====
 let currentRecordType='';
 let selectedRecordGrade="1";
-function selectRecordGrade(grade){selectedRecordGrade=grade;document.querySelectorAll('.record-grade-tab').forEach(b=>b.classList.toggle('active',b.dataset.grade===grade));const desc=document.getElementById('record-grade-desc');if(desc)desc.textContent=grade==='3'?'3학년은 자율활동 기준을 적용합니다.':'1·2학년은 자율·자치활동 기준을 적용합니다.';const itemSel=document.getElementById('record-item-select-unified');if(itemSel&&itemSel.options[0]){itemSel.options[0].textContent=grade==='3'?'자율활동':'자율·자치활동';}if(currentRecordType==='자율·자치활동'||currentRecordType==='자율활동'){currentRecordType=getResolvedAutonomyType();renderRecordMeta(currentRecordType);}}
+function selectRecordGrade(grade){var prevGrade=selectedRecordGrade;selectedRecordGrade=grade;document.querySelectorAll('.record-grade-tab').forEach(b=>b.classList.toggle('active',b.dataset.grade===grade));const desc=document.getElementById('record-grade-desc');if(desc)desc.textContent=grade==='3'?'3학년은 자율활동 기준을 적용합니다.':'1·2학년은 자율·자치활동 기준을 적용합니다.';const itemSel=document.getElementById('record-item-select-unified');if(itemSel&&itemSel.options[0]){itemSel.options[0].textContent=grade==='3'?'자율활동':'자율·자치활동';}if(currentRecordType==='자율·자치활동'||currentRecordType==='자율활동'){currentRecordType=getResolvedAutonomyType();renderRecordMeta(currentRecordType);}
+// traffic 연동: 학년 변경으로 실제 자율 항목이 달라지면 모달
+var trafficSel=document.getElementById('traffic-item-select');
+if(trafficSel&&trafficSel.value==='자율·자치/자율활동'){
+var newTrafficResolved=getResolvedAutonomyType();
+if(newTrafficResolved!==_trafficPreviousItem&&hasTrafficWorkspaceState()){
+requestTrafficContextChange({nextResolvedItem:newTrafficResolved,applyChange:function(){_trafficPreviousItem=newTrafficResolved;renderRecordMeta(newTrafficResolved);document.getElementById('traffic-term-input')?.focus();},restoreChange:function(){selectedRecordGrade=prevGrade;document.querySelectorAll('.record-grade-tab').forEach(b=>b.classList.toggle('active',b.dataset.grade===prevGrade));if(desc)desc.textContent=prevGrade==='3'?'3학년은 자율활동 기준을 적용합니다.':'1·2학년은 자율·자치활동 기준을 적용합니다.';if(itemSel&&itemSel.options[0])itemSel.options[0].textContent=prevGrade==='3'?'자율활동':'자율·자치활동';currentRecordType=prevGrade==='3'?'자율활동':'자율·자치활동';renderRecordMeta(currentRecordType);}});
+}else if(newTrafficResolved!==_trafficPreviousItem){_trafficPreviousItem=newTrafficResolved;}
+}
+}
 function getSelectedRecordGrade(){return selectedRecordGrade||'1';}
 function getResolvedAutonomyType(){return getSelectedRecordGrade()==='3'?'자율활동':'자율·자치활동';}
-function onFreeSemesterSubtypeChange(){const val=document.getElementById('free-semester-subtype')?.value||'자유학기 주제선택활동';currentRecordType=val;renderRecordMeta(val);}
+function onFreeSemesterSubtypeChange(){var prevVal=currentRecordType;const val=document.getElementById('free-semester-subtype')?.value||'자유학기 주제선택활동';currentRecordType=val;renderRecordMeta(val);
+// traffic 연동: traffic이 자유학기활동이면 세부 유형 변경 시 모달
+var trafficSel=document.getElementById('traffic-item-select');
+if(trafficSel&&trafficSel.value==='자유학기활동'){
+var newTrafficResolved=val;
+if(newTrafficResolved!==_trafficPreviousItem&&hasTrafficWorkspaceState()){
+requestTrafficContextChange({nextResolvedItem:newTrafficResolved,applyChange:function(){_trafficPreviousItem=newTrafficResolved;currentRecordType=newTrafficResolved;renderRecordMeta(newTrafficResolved);document.getElementById('traffic-term-input')?.focus();},restoreChange:function(){var subtypeSel=document.getElementById('free-semester-subtype');if(subtypeSel){for(var i=0;i<subtypeSel.options.length;i++){if(subtypeSel.options[i].value===prevVal){subtypeSel.selectedIndex=i;break;}}}currentRecordType=prevVal;renderRecordMeta(prevVal);}});
+}else if(newTrafficResolved!==_trafficPreviousItem){_trafficPreviousItem=newTrafficResolved;}
+}
+}
 // --- 유틸: NEIS 바이트 계산 (한글3, 영문1, 기타1) ---
 function getNeisByte(str){let b=0;for(let i=0;i<str.length;i++){b+=str.charCodeAt(i)>127?3:1;}return b;}
 // --- 유틸: 텍스트 통계 ---
@@ -3803,6 +3833,25 @@ return;
 showTrafficItemChangeModal(newResolved);
 }
 function showTrafficItemChangeModal(newItem){
+requestTrafficContextChange({
+nextResolvedItem:newItem,
+applyChange:function(){
+_trafficPreviousItem=newItem;
+renderRecordMeta(newItem);
+document.getElementById('traffic-term-input')?.focus();
+},
+restoreChange:function(){
+var sel=document.getElementById('traffic-item-select');
+if(sel){for(var i=0;i<sel.options.length;i++){if(resolveRecordSelectValue(sel.options[i].value)===_trafficPreviousItem){sel.selectedIndex=i;break;}}}
+renderRecordMeta(_trafficPreviousItem);
+sel?.focus();
+}
+});
+}
+function requestTrafficContextChange(opts){
+var nextItem=opts.nextResolvedItem;
+var applyChange=opts.applyChange;
+var restoreChange=opts.restoreChange;
 // 기존 모달 제거
 var existing=document.getElementById('traffic-item-change-modal');
 if(existing)existing.remove();
@@ -3814,52 +3863,27 @@ modal.setAttribute('aria-labelledby','traffic-item-change-title');
 modal.setAttribute('aria-describedby','traffic-item-change-desc');
 modal.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.4);';
 var box=document.createElement('div');
-box.style.cssText='background:white;border-radius:12px;padding:24px;max-width:400px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);';
+box.className='traffic-item-change-dialog';
+box.style.cssText='border-radius:12px;padding:24px;max-width:400px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);';
 box.innerHTML='<h3 id="traffic-item-change-title" style="margin:0 0 8px;font-size:1rem;">생기부 항목 변경</h3>'
-+'<p id="traffic-item-change-desc" style="font-size:0.88rem;color:var(--gray-600);margin:0 0 20px;">생기부 항목을 변경하면 현재 입력과 생성된 프롬프트가 모두 지워집니다.<br><strong>'+escapeHtml(newItem)+'</strong>(으)로 변경할까요?</p>'
++'<p id="traffic-item-change-desc" style="font-size:0.88rem;margin:0 0 20px;">생기부 항목을 변경하면 현재 입력과 생성된 프롬프트가 모두 지워집니다.<br><strong>'+escapeHtml(nextItem)+'</strong>(으)로 변경할까요?</p>'
 +'<div style="display:flex;gap:8px;justify-content:flex-end;">'
 +'<button id="traffic-item-change-cancel" class="btn-secondary" style="padding:8px 16px;">취소</button>'
 +'<button id="traffic-item-change-confirm" class="btn-primary" style="padding:8px 16px;">항목 변경</button>'
 +'</div>';
 modal.appendChild(box);
 document.body.appendChild(modal);
-// 이벤트
 var cancelBtn=document.getElementById('traffic-item-change-cancel');
 var confirmBtn=document.getElementById('traffic-item-change-confirm');
-var sel=document.getElementById('traffic-item-select');
 function closeModal(){modal.remove();}
-function handleCancel(){
-// 이전 항목 복원
-if(sel){
-for(var i=0;i<sel.options.length;i++){
-if(resolveRecordSelectValue(sel.options[i].value)===_trafficPreviousItem){
-sel.selectedIndex=i;break;
-}
-}
-}
-renderRecordMeta(_trafficPreviousItem);
-closeModal();
-sel?.focus();
-}
-function handleConfirm(){
-closeModal();
-resetTrafficWorkspace();
-_trafficPreviousItem=newItem;
-renderRecordMeta(newItem);
-document.getElementById('traffic-term-input')?.focus();
-}
+function handleCancel(){closeModal();if(restoreChange)restoreChange();}
+function handleConfirm(){closeModal();resetTrafficWorkspace();if(applyChange)applyChange();}
 cancelBtn.addEventListener('click',handleCancel);
 confirmBtn.addEventListener('click',handleConfirm);
 modal.addEventListener('click',function(e){if(e.target===modal)handleCancel();});
 modal.addEventListener('keydown',function(e){
 if(e.key==='Escape'){e.preventDefault();handleCancel();return;}
-// Tab 트랩
-if(e.key==='Tab'){
-var focusable=[cancelBtn,confirmBtn];
-var first=focusable[0],last=focusable[focusable.length-1];
-if(e.shiftKey){if(document.activeElement===first){e.preventDefault();last.focus();}}
-else{if(document.activeElement===last){e.preventDefault();first.focus();}}
-}
+if(e.key==='Tab'){var focusable=[cancelBtn,confirmBtn];var first=focusable[0],last=focusable[focusable.length-1];if(e.shiftKey){if(document.activeElement===first){e.preventDefault();last.focus();}}else{if(document.activeElement===last){e.preventDefault();first.focus();}}}
 });
 cancelBtn.focus();
 }
