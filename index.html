@@ -170,6 +170,15 @@ main{max-width:var(--max-width);margin:0 auto;padding:24px 20px 60px;}
 .btn-primary:hover{background:var(--primary-dark);}
 .btn-secondary{padding:7px 14px;border-radius:var(--radius-sm);font-size:0.8rem;cursor:pointer;transition:all 0.2s;background:var(--gray-100);color:var(--gray-600);border:1px solid var(--gray-200);}
 .btn-secondary:hover{background:var(--gray-200);}
+.ai-btn{display:inline-flex;align-items:center;padding:7px 14px;border-radius:var(--radius-sm);font-size:0.8rem;cursor:pointer;text-decoration:none;border:1px solid var(--gray-200);transition:all 0.2s;font-weight:500;}
+.ai-btn.chatgpt{background:#10a37f;color:white;border-color:#10a37f;}
+.ai-btn.chatgpt:hover{background:#0d8c6d;}
+.ai-btn.gemini{background:#4285f4;color:white;border-color:#4285f4;}
+.ai-btn.gemini:hover{background:#3367d6;}
+.ai-btn.claude{background:#d97706;color:white;border-color:#d97706;}
+.ai-btn.claude:hover{background:#b45309;}
+.ai-btn.copilot{background:#6366f1;color:white;border-color:#6366f1;}
+.ai-btn.copilot:hover{background:#4f46e5;}
 .record-warning{display:flex;gap:12px;background:#fef3c7;border:1px solid #fde68a;border-radius:var(--radius-sm);padding:16px;margin-bottom:24px;}
 .record-warning i{font-size:1.5rem;color:#d97706;flex-shrink:0;}
 .record-warning strong{display:block;margin-bottom:4px;color:#92400e;}
@@ -3160,6 +3169,9 @@ fileRows.push({rowNumber:r+1,originalText:originalText,detected:detected,status:
 state.checkedRows=fileRows;state.checkedItem=item;
 }
 }
+// 검사 요약 렌더
+var allDisplayRows=[].concat(directRows).concat(fileRows);
+renderTrafficSummary(allDisplayRows);
 // 신호등 결과 렌더
 renderTrafficDirectResult(directRows,item);
 if(fileRows.length>0){
@@ -3206,7 +3218,33 @@ if(!r.originalText)return;
 var sourceLabel=r.source==='direct'?'[직접 입력 '+r.rowNumber+'번]':'[파일 입력 — 원본 '+r.rowNumber+'행 — 학생 구분값: '+(r.studentLabel||'원본 '+r.rowNumber+'행')+']';
 rowBlocks+=sourceLabel+`\n출처: ${r.source==='direct'?'직접 입력':'파일 입력'}\n원문: ${r.originalText}\n웹사이트 1차 판정: ${r.statusIcon} ${r.status}\n대표 규칙 ID: ${r.detected&&r.detected.length?r.detected.map(function(d){return d.ruleId||'';}).filter(Boolean).join(", ")||"없음":"없음"}\n검출 표현: ${r.detected&&r.detected.length?r.detected.map(function(d){return d.term;}).join(", "):"없음"}\n규칙 분류: ${r.detected&&r.detected.length?r.detected.map(function(d){return d.category;}).join(", "):"없음"}\n판정 이유: ${r.detected&&r.detected.length?r.detected.map(function(d){return d.reason;}).join(" / "):"웹사이트 규칙표에서 자동 검출된 표현은 없음"}\n권장 대체 방향: ${r.detected&&r.detected.length?r.detected.map(function(d){return d.alt;}).join(" / "):"전체 문맥과 공식 기재 기준을 AI가 추가 검토"}\n교사 확인 포인트: ${r.detected&&r.detected.length?[...new Set(r.detected.map(function(d){return d.teacherCheck;}).filter(Boolean))].join("; ")||"전체 문맥과 실제 관찰 근거를 교사가 최종 확인":"전체 문맥과 실제 관찰 근거를 교사가 최종 확인"}\n기준 수준: ${r.detected&&r.detected.length?r.detected.map(function(d){return d.sourceLevel==='school'?'학교 자체 기준':'국가 공식 기준';}).join(" / "):"해당 없음"}\n기준 출처: ${r.detected&&r.detected.length?r.detected.map(function(d){return(typeof d.source==='string'&&d.source)?d.source:(d.basisType||"공식 기재 기준");}).join(" / "):"해당 없음"}\n\n`;
 });
-return `너는 ${RECORD_POLICY_META.documentTitle}과 학교의 학교생활기록부 작성 연수 기준에 따라 생기부 문장의 기재금지\u00B7위험 표현을 정밀 검토하고 문제가 있는 부분만 최소한으로 수정하는 전문가야.\n\n[적용 기준]\n- ${RECORD_POLICY_META.documentTitle}\n- 근거 훈령: ${RECORD_POLICY_META.decreeNumber} (${RECORD_POLICY_META.effectiveDate} 시행)\n- 공식 포털 확인일: ${RECORD_POLICY_META.verifiedDate}\n\n아래 문장들은 웹사이트 내부 규칙표를 이용한 1차 신호등 검사를 마친 자료야.\n웹사이트의 1차 판정은 참고자료일 뿐 최종 판정이 아니야.\n규칙표에서 검출된 표현만 확인하지 말고, 규칙표에서 발견되지 않은 문장도 전체 문맥과 학교생활기록부 기재 기준에 따라 다시 검토해줘.\n\n[검토 대상 정보]\n${headerInfo}${itemRulesBlock}${schoolPolicyBlock}\n\n[1차 규칙표 검사 요약]\n- \u{1F534} 기재금지: ${danger}건\n- \u{1F7E1} 교사 확인: ${warning}건\n- \u{1F7E0} 일반화\u00B7한글대체: ${generalize}건\n- \u{1F7E2} 규칙표 기준 발견 없음: ${safe}건\n\n[가장 중요한 원칙]\n1. 원문에 없는 학생의 행동, 태도, 성취, 결과를 새로 만들어내지 않는다.\n2. 원문의 실제 관찰 사실과 교육적 의미를 최대한 유지한다.\n3. 기재금지 또는 위험한 핵심 부분만 최소한으로 수정한다.\n4. 문장을 더 화려하거나 과장되게 만들지 않는다.\n5. 원문에 구체적인 관찰 사실이 없으면 새로운 행동을 임의로 추가하지 않는다.\n6. 구체화할 근거가 부족하면 수정이유에 '교사 확인 필요'라고 표시한다.\n7. 학교 교육활동과 교사의 직접 관찰에 근거한 내용인지 확인한다.\n8. 허위, 과장, 추측, 상투적인 칭찬을 추가하지 않는다.\n9. AI가 생성한 내용을 교사의 판단 없이 그대로 입력하도록 안내하지 않는다.\n10. 학생이 작성한 자기평가서\u00B7소감문 등을 그대로 옮겨 적은 문장인지 확인하고, 그런 경우 교사 관찰자 시점의 문장으로 재구성한다.\n11. 문제가 없는 문장은 '원문 유지'로 처리하고 수정하지 않는다.\n12. 금지·위험 표현만 최소한으로 삭제하거나 안전한 표현으로 바꾸고, 나머지는 그대로 둔다.\n13. 수정 시 원문의 실제 관찰 사실과 구조를 최대한 보존한다.\n14. 수정이 필요한 경우 '수정 전후 차이', '수정 이유', '최종 기록문'을 제공한다.\n15. 문제 없는 행은 수정 제안에 '원문 유지'라고만 적는다.\n\n[예외와 구분]\n1. AI라는 일반 개념 자체는 금지어가 아니다.\n2. UCC, PAPS, SNS, PPT, AI 등 일반화된 명사는 영문이라는 이유만으로 삭제하지 않는다.\n3. CCL, BY, NC, ND, SA는 의미가 드러나는 한글 표현으로 바꿀 수 있다.\n4. 도서명\u00B7저자명 안의 고유명사는 문맥을 확인한다.\n5. 체육 관련 교과세특의 PAPS 1등급은 허용 예외를 고려한다.\n6. 특정 플랫폼명(유튜브, 구글, 카카오, 오픈AI, 마이크로소프트, 패들렛 등)은 '생성형 인공지능 도구', '온라인 학습 도구' 등으로 일반화한다.\n7. 교육관련기관(교육부 및 소속기관인 대한민국학술원, 국사편찬위원회, 국립국제교육원, 국립특수교육원, 교원소청심사위원회, 중앙교육연수원 / 시도교육청 및 직속기관 / 교육지원청 및 소속기관)은 기관명 기재 제한의 예외로 허용한다.\n\n[가운뎃점(·) 처리 원칙]\n1. 자율·자치활동, 기술·가정, 예술·체육활동 등 공식 명칭과 교과명의 가운뎃점은 기재금지가 아니다. 원문 유지한다.\n2. 도서명·작품명·기관명·고유명사 안의 가운뎃점도 원래 표기를 유지한다.\n3. 의미상 필요한 병렬(예: 학생·학부모)은 자연스러우면 유지 가능하다.\n4. 불필요한 목록식 반복(예: 발표·토론·보고서·실험)만 문장형으로 수정을 권장하되, 원문에 없는 활동 관계나 결과를 만들지 않는다.\n5. 가운뎃점만 발견됐다는 이유로 기재금지나 삭제 필수로 판정하지 않는다.\n\n[문장 작성 원칙]\n1. 교사 관찰자 시점으로 작성한다.\n2. 문장은 ~함, ~음, ~임 등의 명사형 종결을 중심으로 작성한다.\n3. 원문의 의미를 바꾸지 않는다.\n4. 공식 글자 수와 NEIS Byte 제한을 넘지 않게 한다.\n\n[최종 출력 형식]\n최종 결과는 마크다운 표로 출력해줘. 열은 반드시 다음 7개 열을 정확하게 사용해.\n\n| 학생 구분값 | 원문 | 신호등 판정 | 확인할 표현 | 판정 이유 | 수정 제안 | 교사 확인 포인트 |\n\n열 이름을 줄이거나 바꾸지 마.\n모든 원문 행을 원래 순서대로 출력해.\n규칙표에서 문제가 발견되지 않은 행도 생략하지 마.\n수정이 없는 행은 수정 제안에 '원문 유지'라고 적어.\n반드시 입력된 모든 행을 빠짐없이 포함해야 해.\n\n[학생 구분값 규칙]\n- 직접 입력은 '직접 입력 1번', '직접 입력 2번'처럼 표시\n- 파일 입력은 선택한 학생 구분 열의 실제 값을 사용\n- 학생 구분 열을 선택하지 않은 파일은 '원본 N행'으로 표시\n\n[수정 제안 셀 작성 규칙]\n수정이 필요한 경우 다음 세 내용을 줄바꿈으로 구분해서 작성해:\n- 수정 전후 차이\n- 수정 이유\n- 최종 기록문\n수정이 없으면 '원문 유지'라고만 적어.\n\n[출력 제한]\n- 표 앞이나 뒤에 장문의 설명을 붙이지 않는다.\n- 엑셀 파일을 만들지 않는다.\n- 코드 블록으로 출력하지 않는다.\n- 위 7열 마크다운 표를 중심으로 출력한다.\n\n[검토 데이터 시작]\n[웹사이트 1차 검사 결과]\n\n${rowBlocks}\n[검토 데이터 끝]\n\n이제 모든 행을 다시 정밀 검토하고 지정된 7열 마크다운 표로 출력해줘.`;
+return `너는 ${RECORD_POLICY_META.documentTitle}과 학교의 학교생활기록부 작성 연수 기준에 따라 생기부 문장의 기재금지\u00B7위험 표현을 정밀 검토하고 문제가 있는 부분만 최소한으로 수정하는 전문가야.\n\n[적용 기준]\n- ${RECORD_POLICY_META.documentTitle}\n- 근거 훈령: ${RECORD_POLICY_META.decreeNumber} (${RECORD_POLICY_META.effectiveDate} 시행)\n- 공식 포털 확인일: ${RECORD_POLICY_META.verifiedDate}\n\n아래 문장들은 웹사이트 내부 규칙표를 이용한 1차 신호등 검사를 마친 자료야.\n웹사이트의 1차 판정은 참고자료일 뿐 최종 판정이 아니야.\n규칙표에서 검출된 표현만 확인하지 말고, 규칙표에서 발견되지 않은 문장도 전체 문맥과 학교생활기록부 기재 기준에 따라 다시 검토해줘.\n\n[검토 대상 정보]\n${headerInfo}${itemRulesBlock}${schoolPolicyBlock}\n\n[1차 규칙표 검사 요약]\n- \u{1F534} 기재금지: ${danger}건\n- \u{1F7E1} 교사 확인: ${warning}건\n- \u{1F7E0} 일반화\u00B7한글대체: ${generalize}건\n- \u{1F7E2} 규칙표 기준 발견 없음: ${safe}건\n\n[가장 중요한 원칙]\n1. 원문에 없는 학생의 행동, 태도, 성취, 결과를 새로 만들어내지 않는다.\n2. 원문의 실제 관찰 사실과 교육적 의미를 최대한 유지한다.\n3. 기재금지 또는 위험한 핵심 부분만 최소한으로 수정한다.\n4. 문장을 더 화려하거나 과장되게 만들지 않는다.\n5. 원문에 구체적인 관찰 사실이 없으면 새로운 행동을 임의로 추가하지 않는다.\n6. 구체화할 근거가 부족하면 수정이유에 '교사 확인 필요'라고 표시한다.\n7. 학교 교육활동과 교사의 직접 관찰에 근거한 내용인지 확인한다.\n8. 허위, 과장, 추측, 상투적인 칭찬을 추가하지 않는다.\n9. AI가 생성한 내용을 교사의 판단 없이 그대로 입력하도록 안내하지 않는다.\n10. 학생이 작성한 자기평가서\u00B7소감문 등을 그대로 옮겨 적은 문장인지 확인하고, 그런 경우 교사 관찰자 시점의 문장으로 재구성한다.\n\n[핵심 확인사항]\n해당 활동이 학교 수업·교육과정 내에서 이루어졌는지 확인해주세요.\n- 교사가 직접 관찰할 수 있는 활동인지\n- 교외·외부·사교육 활동인지\n- 학생 자기평가나 소감만을 그대로 옮긴 것인지\n- 원문에 없는 행동이나 성과가 추가됐는지\n\n11. 문제가 없는 문장은 '원문 유지'로 처리하고 수정하지 않는다.\n12. 금지·위험 표현만 최소한으로 삭제하거나 안전한 표현으로 바꾸고, 나머지는 그대로 둔다.\n13. 수정 시 원문의 실제 관찰 사실과 구조를 최대한 보존한다.\n14. 수정이 필요한 경우 '수정 전후 차이', '수정 이유', '최종 기록문'을 제공한다.\n15. 문제 없는 행은 수정 제안에 '원문 유지'라고만 적는다.\n\n[예외와 구분]\n1. AI라는 일반 개념 자체는 금지어가 아니다.\n2. UCC, PAPS, SNS, PPT, AI 등 일반화된 명사는 영문이라는 이유만으로 삭제하지 않는다.\n3. CCL, BY, NC, ND, SA는 의미가 드러나는 한글 표현으로 바꿀 수 있다.\n4. 도서명\u00B7저자명 안의 고유명사는 문맥을 확인한다.\n5. 체육 관련 교과세특의 PAPS 1등급은 허용 예외를 고려한다.\n6. 특정 플랫폼명(유튜브, 구글, 카카오, 오픈AI, 마이크로소프트, 패들렛 등)은 '생성형 인공지능 도구', '온라인 학습 도구' 등으로 일반화한다.\n7. 교육관련기관(교육부 및 소속기관인 대한민국학술원, 국사편찬위원회, 국립국제교육원, 국립특수교육원, 교원소청심사위원회, 중앙교육연수원 / 시도교육청 및 직속기관 / 교육지원청 및 소속기관)은 기관명 기재 제한의 예외로 허용한다.\n\n[가운뎃점(·) 처리 원칙]\n1. 자율·자치활동, 기술·가정, 예술·체육활동 등 공식 명칭과 교과명의 가운뎃점은 기재금지가 아니다. 원문 유지한다.\n2. 도서명·작품명·기관명·고유명사 안의 가운뎃점도 원래 표기를 유지한다.\n3. 의미상 필요한 병렬(예: 학생·학부모)은 자연스러우면 유지 가능하다.\n4. 불필요한 목록식 반복(예: 발표·토론·보고서·실험)만 문장형으로 수정을 권장하되, 원문에 없는 활동 관계나 결과를 만들지 않는다.\n5. 가운뎃점만 발견됐다는 이유로 기재금지나 삭제 필수로 판정하지 않는다.\n\n[문장 작성 원칙]\n1. 교사 관찰자 시점으로 작성한다.\n2. 문장은 ~함, ~음, ~임 등의 명사형 종결을 중심으로 작성한다.\n3. 원문의 의미를 바꾸지 않는다.\n4. 공식 글자 수와 NEIS Byte 제한을 넘지 않게 한다.\n\n[최종 출력 형식]\n최종 결과는 마크다운 표로 출력해줘. 열은 반드시 다음 8개 열을 정확하게 사용해.\n\n| 행 | 원문 | 수정본 | 삭제·수정된 표현 | 추가·대체된 표현 | 수정유형 | 수정이유 | 글자수 / Byte |\n\n열 이름을 줄이거나 바꾸지 마.\n모든 원문 행을 원래 순서대로 출력해.\n\n[행 열 규칙]\n- 직접 입력은 '직접 입력 1번', '직접 입력 2번'처럼 표시\n- 파일 입력은 '원본 N행'으로 표시\n- 학생 구분 열을 선택했으면 '원본 N행 (구분값)'으로 함께 표시\n\n[수정본 규칙]\n- 문제가 없으면 원문을 그대로 작성\n- 문제가 있으면 문제 부분만 최소 수정한 최종 기록문 작성\n- 원문에 없는 행동·태도·역량·성과·성장 추가 금지\n\n[삭제·수정된 표현]\n- 원문에서 실제 삭제하거나 바꾼 표현만 기록\n- 없으면 '없음'\n\n[추가·대체된 표현]\n- 수정본에 실제 추가하거나 대체한 표현만 기록\n- 삭제만 했으면 '없음'\n- 원문에 없는 새로운 활동 사실을 넣지 않음\n\n[수정유형]\n- 🟢 원문 유지\n- 🟡 교사 확인 필요\n- 🟠 일반화·대체 필요\n- 🔴 삭제·수정 필요\n\n[수정이유]\n- 왜 유지·확인·대체·삭제했는지 간결하게 설명\n\n[글자수 / Byte]\n- 수정본 기준\n- 'N자 / NNNByte' 형식\n- 한글 3Byte, 영문·숫자 1Byte, 줄바꿈 1Byte\n\n[출력 제한]\n- 표 앞이나 뒤에 장문의 설명을 붙이지 않는다.\n- 엑셀 파일을 만들지 않는다.\n- 코드 블록으로 출력하지 않는다.\n- 위 8열 마크다운 표를 중심으로 출력한다.\n\n[검토 데이터 시작]\n[웹사이트 1차 검사 결과]\n\n${rowBlocks}\n[검토 데이터 끝]\n\n이제 모든 행을 다시 정밀 검토하고 지정된 8열 마크다운 표로 출력해줘.`;
+}
+
+// ===== 🚦 검사 요약 렌더링 =====
+function renderTrafficSummary(allRows){
+var container=document.getElementById('traffic-result');
+if(!container)return;
+var total=allRows.length;
+var safe=allRows.filter(function(r){return r.statusKey==='safe';}).length;
+var warning=allRows.filter(function(r){return r.statusKey==='warning';}).length;
+var generalize=allRows.filter(function(r){return r.statusKey==='generalize';}).length;
+var danger=allRows.filter(function(r){return r.statusKey==='danger';}).length;
+var empty=allRows.filter(function(r){return r.statusKey==='empty';}).length;
+var highestLevel=danger>0?'\u{1F534} 삭제\u00B7수정 필요':generalize>0?'\u{1F7E0} 일반화\u00B7대체 필요':warning>0?'\u{1F7E1} 교사 확인 필요':'\u{1F7E2} 원문 유지';
+container.classList.remove('hidden');
+var summaryHtml='<div style="margin-bottom:12px;padding:14px;background:white;border:1px solid var(--gray-200);border-radius:var(--radius-sm);">';
+summaryHtml+='<strong>\u{1F4CA} 검사 요약</strong><br>';
+summaryHtml+='<span style="font-size:0.85rem;">전체 '+(total-empty)+'행</span><br>';
+summaryHtml+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">';
+if(safe>0)summaryHtml+='<span style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;border-radius:20px;padding:3px 10px;font-size:0.8rem;">\u{1F7E2} 원문 유지 '+safe+'개</span>';
+if(warning>0)summaryHtml+='<span style="background:#fffbeb;color:#92400e;border:1px solid #fde68a;border-radius:20px;padding:3px 10px;font-size:0.8rem;">\u{1F7E1} 교사 확인 필요 '+warning+'개</span>';
+if(generalize>0)summaryHtml+='<span style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;border-radius:20px;padding:3px 10px;font-size:0.8rem;">\u{1F7E0} 일반화\u00B7대체 필요 '+generalize+'개</span>';
+if(danger>0)summaryHtml+='<span style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:20px;padding:3px 10px;font-size:0.8rem;">\u{1F534} 삭제\u00B7수정 필요 '+danger+'개</span>';
+summaryHtml+='</div>';
+summaryHtml+='<div style="margin-top:6px;font-size:0.8rem;color:var(--gray-500);">최고 위험 수준: '+highestLevel+'</div>';
+summaryHtml+='</div>';
+container.innerHTML=summaryHtml;
 }
 
 // ===== 🚦 직접 입력 결과 렌더링 =====
@@ -3222,7 +3260,7 @@ if(danger>0)resultDiv.classList.add('danger');
 else if(warning>0)resultDiv.classList.add('warning');
 else if(generalize>0)resultDiv.classList.add('generalize');
 else resultDiv.classList.add('safe');
-var html='<div style="margin-bottom:12px;"><strong>\u{1F6A6} 신호등 검사 결과</strong> ('+allResults.length+'개 문장)</div>';
+var html='<details id="traffic-direct-details"><summary style="cursor:pointer;padding:8px 0;font-size:0.9rem;color:var(--primary);font-weight:600;" aria-expanded="false">\u{1F50D} 행별 검사 결과 펼치기 \u25BC</summary><div><div style="margin-bottom:12px;"><strong>\u{1F6A6} 신호등 검사 결과</strong> ('+allResults.length+'개 문장)</div>';
 html+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">';
 if(danger>0)html+='<span style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:20px;padding:3px 10px;font-size:0.8rem;">\u{1F534} 기재금지 '+danger+'건</span>';
 if(warning>0)html+='<span style="background:#fffbeb;color:#92400e;border:1px solid #fde68a;border-radius:20px;padding:3px 10px;font-size:0.8rem;">\u{1F7E1} 교사 확인 '+warning+'건</span>';
@@ -3262,7 +3300,10 @@ html+='<li>편향 가능성: 자동 확정 불가 — AI 정밀검토 및 교사
 html+='<li>공식 기준 추가 확인 사항: 자동 확정 불가 — AI 정밀검토 및 교사 확인 필요</li>';
 html+='<li>교사 확인 포인트: 실제 관찰 사실, 학교 교육활동 여부, 과장\u00B7추측 여부 확인</li>';
 html+='</ul></div>';
-resultDiv.innerHTML=html;
+html+='</div></details>';
+resultDiv.innerHTML+=html;
+var detDirect=document.getElementById('traffic-direct-details');
+if(detDirect){detDirect.addEventListener('toggle',function(){var s=detDirect.querySelector('summary');if(s){s.setAttribute('aria-expanded',detDirect.open?'true':'false');s.innerHTML=detDirect.open?'\u{1F50D} 행별 검사 결과 접기 \u25B2':'\u{1F50D} 행별 검사 결과 펼치기 \u25BC';}});}
 }
 
 // ===== 🚦 파일 7열 행별 결과표 =====
@@ -3354,7 +3395,9 @@ currentPrompt=prompt+splitNotice;
 container.classList.remove('hidden');
 var html='<div style="background:white;border:1px solid var(--gray-200);border-radius:var(--radius-sm);padding:14px;">';
 html+='<h4 style="margin-bottom:8px;">\u{1F916} AI 정밀검토 수정 프롬프트</h4>';
-html+='<p style="font-size:0.8rem;color:var(--gray-500);margin-bottom:8px;">아래 프롬프트를 복사하여 생성형 AI에 붙여넣으세요. 별도의 엑셀 파일 첨부가 필요 없습니다.</p>';
+html+='<details id="traffic-prompt-details">';
+html+='<summary style="cursor:pointer;padding:8px 0;font-size:0.9rem;color:var(--primary);font-weight:600;" aria-expanded="false">\u{1F4CB} 프롬프트 펼치기 \u25BC</summary>';
+html+='<div style="margin-top:8px;">';
 if(totalParts>1){
 html+='<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">';
 html+='<button class="btn-secondary" onclick="trafficChunkPrev()" '+(chunkIdx===0?'disabled':'')+'>\u2190 이전</button>';
@@ -3363,27 +3406,22 @@ html+='<button class="btn-secondary" onclick="trafficChunkNext()" '+(chunkIdx>=t
 html+='</div>';
 }
 html+='<textarea readonly style="width:100%;min-height:120px;max-height:300px;padding:10px;border:1px solid var(--gray-200);border-radius:var(--radius-sm);font-size:0.82rem;font-family:inherit;resize:vertical;background:var(--gray-50);">'+escapeHtml(currentPrompt)+'</textarea>';
-html+='<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">';
+html+='</div></details>';
+html+='<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">';
 html+='<button class="btn-primary" onclick="copyTrafficUnifiedPrompt()"><i class="ri-file-copy-line"></i> 프롬프트 복사</button>';
-html+='<button class="btn-secondary" onclick="openTrafficPromptInResult()">결과 화면에서 보기</button>';
+html+='<a href="https://chat.openai.com/" target="_blank" rel="noopener noreferrer" class="ai-btn chatgpt">ChatGPT 열기</a>';
+html+='<a href="https://gemini.google.com/" target="_blank" rel="noopener noreferrer" class="ai-btn gemini">Gemini 열기</a>';
+html+='<a href="https://claude.ai/" target="_blank" rel="noopener noreferrer" class="ai-btn claude">Claude 열기</a>';
+html+='<a href="https://copilot.microsoft.com/" target="_blank" rel="noopener noreferrer" class="ai-btn copilot">Copilot 열기</a>';
 html+='</div>';
-html+='<p style="font-size:0.75rem;color:var(--gray-400);margin-top:8px;">\u{1F4CC} 사용 순서: \u2460 프롬프트 복사 \u2192 \u2461 생성형 AI 열기 \u2192 \u2462 붙여넣기 \u2192 \u2463 7열 표 확인 \u2192 \u2464 교사 최종 확인<br>AI 결과를 교사 판단 없이 그대로 학교생활기록부에 입력하지 마세요.</p>';
+html+='<p style="font-size:0.75rem;color:var(--gray-400);margin-top:8px;">프롬프트를 복사한 뒤 원하는 AI 대화창에 붙여넣으세요.<br>학생을 식별할 수 있는 개인정보가 포함되어 있지 않은지 마지막으로 확인해주세요.</p>';
 html+='</div>';
 container.innerHTML=html;
+var det=document.getElementById('traffic-prompt-details');
+if(det){det.addEventListener('toggle',function(){var s=det.querySelector('summary');if(s){s.setAttribute('aria-expanded',det.open?'true':'false');s.innerHTML=det.open?'\u{1F4CB} 프롬프트 접기 \u25B2':'\u{1F4CB} 프롬프트 펼치기 \u25BC';}});}
 }
 function copyTrafficUnifiedPrompt(){
 if(currentPrompt&&navigator.clipboard){navigator.clipboard.writeText(currentPrompt).then(function(){showToast('\uD504\uB86C\uD504\uD2B8\uAC00 \uBCF5\uC0AC\uB418\uC5C8\uC2B5\uB2C8\uB2E4');});}else{showToast('\uBCF5\uC0AC\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4. \uC9C1\uC811 \uC120\uD0DD\uD574\uC11C \uBCF5\uC0AC\uD574\uC8FC\uC138\uC694');}
-}
-function openTrafficPromptInResult(){
-currentInput='\uC0DD\uAE30\uBD80 \uC2E0\uD638\uB4F1 \uAC80\uD1A0 \uD504\uB86C\uD504\uD2B8';setResultMode('TRAFFIC_REVIEW');
-document.getElementById('result-intent').textContent='';
-var intentEl=document.getElementById('result-intent');
-var strong=document.createElement('strong');strong.textContent='\uC758\uB3C4 \uD574\uC11D: ';
-intentEl.appendChild(strong);
-intentEl.appendChild(document.createTextNode('\uC2E0\uD638\uB4F1 \uAC80\uC0AC \uACB0\uACFC\uB97C \uBC14\uD0D5\uC73C\uB85C AI\uAC00 \uAE30\uC7AC\uAE08\uC9C0\u00B7\uC704\uD5D8 \uD45C\uD604\uC744 \uC815\uBC00 \uAC80\uD1A0\uD558\uACE0 7\uC5F4 \uD45C\uB97C \uB300\uD654\uCC3D\uC5D0 \uCD9C\uB825\uD558\uAC8C \uD558\uB294 \uD504\uB86C\uD504\uD2B8\uC785\uB2C8\uB2E4.'));
-document.getElementById('result-prompt').value=currentPrompt;
-document.getElementById('result-tip').innerHTML='\u{1F4CC} <strong>\uC0AC\uC6A9 \uC21C\uC11C:</strong> \u2460 \uD504\uB86C\uD504\uD2B8 \uBCF5\uC0AC \u2192 \u2461 \uC0AC\uC6A9\uD560 \uC0DD\uC131\uD615 AI \uC5F4\uAE30 \u2192 \u2462 \uD504\uB86C\uD504\uD2B8 \uBD99\uC5EC\uB123\uAE30 \u2192 \u2463 AI \uB300\uD654\uCC3D\uC5D0 \uCD9C\uB825\uB41C 7\uC5F4 \uD45C \uD655\uC778 \u2192 \u2464 \uC218\uC815\uBB38\uC744 \uAD50\uC0AC\uAC00 \uACF5\uC2DD \uAE30\uC900\uACFC \uC2E4\uC81C \uAD00\uCC30 \uB0B4\uC6A9\uC5D0 \uB530\uB77C \uCD5C\uC885 \uD655\uC778<br><br>\uBCC4\uB3C4\uC758 \uAC80\uD1A0 \uC5D1\uC140\uC744 \uB2E4\uC6B4\uB85C\uB4DC\uD558\uAC70\uB098 AI\uC5D0 \uCCA8\uBD80\uD560 \uD544\uC694\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.<br>AI\uAC00 \uC791\uC131\uD55C \uBB38\uC7A5\uC744 \uADF8\uB300\uB85C \uD559\uAD50\uC0DD\uD65C\uAE30\uB85D\uBD80\uC5D0 \uC785\uB825\uD558\uC9C0 \uB9C8\uC138\uC694.';
-showSection('result');setResultReturnTarget("record","traffic-check-panel");updateResultBackButton();
 }
 
 // ===== 🚦 파일 일괄 검사 =====
