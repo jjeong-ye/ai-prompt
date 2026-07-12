@@ -1246,7 +1246,7 @@ function getEffectiveLimits(type,options){const rule=getApplicableRule(resolveRu
 if(scope==='subject'&&rule.perSubjectMaxChars){var psOvr=overrides.find(function(o){return o.field==='perSubjectMaxChars';});if(options&&options.useSchoolLimits&&psOvr)return{maxChars:psOvr.school,maxBytes:psOvr.school*3,source:'school',scope:'subject',nationalMaxChars:psOvr.national,nationalMaxBytes:psOvr.national*3};return{maxChars:rule.perSubjectMaxChars,maxBytes:rule.perSubjectMaxBytes||rule.perSubjectMaxChars*3,source:'national',scope:'subject'};}
 // 공통 한도
 var co=overrides.find(function(o){return o.field==='commonMaxChars';});if(options&&options.useSchoolLimits&&co)return{maxChars:co.school,maxBytes:co.school*3,source:'school',scope:'common',nationalMaxChars:co.national,nationalMaxBytes:co.national*3};return{maxChars:rule.maxChars,maxBytes:rule.maxBytes,source:'national',scope:'common'};}
-function evaluateRecordText(text,type,options){const results=[];if(!text||!type)return results;const resolved=resolveRuleLabel(type);const rule=getApplicableRule(resolved);if(!rule)return results;const stats=getTextStats(text);const limits=getEffectiveLimits(resolved,options);
+function evaluateRecordText(text,type,options){var results=[];if(!text||!type)return results;const resolved=resolveRuleLabel(type);const rule=getApplicableRule(resolved);if(!rule)return results;const stats=getTextStats(text);const limits=getEffectiveLimits(resolved,options);
 // 글자수·Byte 초과
 if(rule.maxChars>0&&stats.chars>limits.maxChars){results.push(createJudgmentResult({ruleId:rule.id+'-charlimit',severity:SEVERITY.REVISE,expression:stats.chars+'자/'+limits.maxChars+'자',reason:'글자수 초과 ('+stats.chars+'자 > '+limits.maxChars+'자)'+(limits.nationalMaxChars?' — 국가 기준 '+limits.nationalMaxChars+'자 이내':''),source:limits.source==='school'?'학교 자체 기준':'국가 공식 기준',alternative:limits.maxChars+'자 이내로 축약',teacherCheck:'글자 수와 NEIS Byte 확인',sourceLevel:limits.source}));}
 if(rule.maxBytes>0&&stats.bytes>limits.maxBytes){results.push(createJudgmentResult({ruleId:rule.id+'-bytelimit',severity:SEVERITY.REVISE,expression:stats.bytes+'B/'+limits.maxBytes+'B',reason:'Byte 초과 ('+stats.bytes+'B > '+limits.maxBytes+'B)'+(limits.nationalMaxBytes?' — 국가 기준 '+limits.nationalMaxBytes+'B 이내':''),source:limits.source==='school'?'학교 자체 기준':'국가 공식 기준',alternative:limits.maxBytes+'Byte 이내로 축약',teacherCheck:'NEIS Byte 확인',sourceLevel:limits.source}));}
@@ -1259,25 +1259,36 @@ if(/(토익|TOEIC|토플|TOEFL|텝스|TEPS|오픽|OPIc|JLPT|HSK|IELTS|DELE|DELF|
 // 자격증 + 취득/합격/급 = PROHIBITED
 if(/(자격증|검정|능력검정|기능사|기사)\s*(취득|합격|통과|\d+급|\d+등급)/.test(text)||/(취득|합격|통과)\s*(하|한|함)/.test(text)&&/(자격|검정|인증)/.test(text)){results.push(createJudgmentResult({ruleId:'compound-자격증취득기재금지',severity:SEVERITY.PROHIBITED,expression:(text.match(/(자격증|검정|능력검정|기능사|기사)\s*(취득|합격|통과|\d+급)/)||['자격증 취득'])[0],reason:'자격증 명칭·취득 사실은 학교생활기록부 기재 금지',source:'기재요령 기재 금지사항',alternative:'관련 교과 학습 활동 참여 내용으로 대체',teacherCheck:'자격증 관련 내용 확인',sourceLevel:'national'}));}
 // 특정 대학 진학 목표 = PROHIBITED
-if(/(서울대|연세대|고려대|카이스트|포스텍|KAIST|한양대|성균관대|이화여대|중앙대|경희대|한국외대)\s*(진학|입학|합격|목표|지원)/.test(text)){results.push(createJudgmentResult({ruleId:'compound-대학명진학기재금지',severity:SEVERITY.PROHIBITED,expression:(text.match(/(서울대|연세대|고려대|카이스트|포스텍|KAIST|한양대|성균관대|이화여대|중앙대|경희대|한국외대)\s*(진학|입학|합격|목표|지원)/)||[''])[0],reason:'특정 대학명은 학교생활기록부 기재 금지',source:'기재요령 기재 금지사항',alternative:'희망 진로 분야로만 서술',teacherCheck:'대학명 기재 여부 확인',sourceLevel:'national'}));}
-// forbiddenTerms 단일 키워드 (교외 복합 규칙에서 이미 PROHIBITED 판정된 경우 중복 방지)
+if(/(서울대학교|서울대|연세대학교|연세대|고려대학교|고려대|한국과학기술원|카이스트|포스텍|포항공과대학교|KAIST|한양대학교|한양대|성균관대학교|성균관대|이화여대|이화여자대학교|중앙대학교|중앙대|경희대학교|경희대|한국외대|한국외국어대학교)\s*(진학|입학|합격|목표|지원)/.test(text)){results.push(createJudgmentResult({ruleId:'compound-대학명진학기재금지',severity:SEVERITY.PROHIBITED,expression:(text.match(/(서울대학교|서울대|연세대학교|연세대|고려대학교|고려대|한국과학기술원|카이스트|포스텍|포항공과대학교|KAIST|한양대학교|한양대|성균관대학교|성균관대|이화여대|이화여자대학교|중앙대학교|중앙대|경희대학교|경희대|한국외대|한국외국어대학교)\s*(진학|입학|합격|목표|지원)/)||[''])[0],reason:'특정 대학명은 학교생활기록부 기재 금지',source:'기재요령 기재 금지사항',alternative:'희망 진로 분야로만 서술',teacherCheck:'대학명 기재 여부 확인',sourceLevel:'national'}));}
+// forbiddenTerms 단일 키워드 (복합 규칙에서 이미 PROHIBITED 판정된 경우 중복 방지)
 var hasProhibited=results.some(function(r){return r.severity===SEVERITY.PROHIBITED;});
 if(!hasProhibited){var sortedKeys=Object.keys(forbiddenTerms||{}).sort(function(a,b){return b.length-a.length;});for(var ki=0;ki<sortedKeys.length;ki++){var key=sortedKeys[ki];if(text.includes(key)){var ft=forbiddenTerms[key];results.push(createJudgmentResult({ruleId:'forbidden-'+key,severity:mapLegacySeverity(ft.status),expression:key,reason:ft.reason||'',source:'국가 공식 기재 기준',alternative:ft.alt||'',teacherCheck:'실제 관찰 사실 확인',sourceLevel:(ft.basisType&&ft.basisType.includes('학교'))?'school':'national'}));break;}}}
-// AI 패턴 검사
-var aiPats=[{p:/매우\s*뛰어난/,r:'과장표현',a:'구체적 관찰 행동으로 대체'},{p:/반에서\s*가장/,r:'비교·서열화',a:'학생 개인의 행동으로만 서술'},{p:/항상/,r:'단정적 일반화',a:'구체적 관찰 사례로 대체'},{p:/큰\s*성장을\s*이룸/,r:'근거 없는 성장',a:'관찰된 구체적 변화로 대체'},{p:/여학생답게|남학생답게/,r:'성별 편향',a:'성별 무관한 행동 서술로 대체'},{p:/학원/,r:'사교육 언급',a:'학교 교육활동 참여로 대체'},{p:/\d+\s*점/,r:'점수 직접 노출',a:'구체적 학습 행동으로 대체'},{p:/[A-E]\s*등급|[1-9]\s*등급/,r:'등급 직접 노출',a:'성취 수준의 특성으로 서술'},{p:/\d+\s*등|석차|수석|차석/,r:'석차·순위 노출',a:'학생 개인의 행동으로만 서술'},{p:/K-?MOOC|KOCW/i,r:'K-MOOC·KOCW 기재 금지',a:'관련 교과 학습 활동으로 서술'},{p:/방과후\s*(학교|수업|활동)/,r:'방과후학교 기재 금지',a:'정규 교육과정 활동으로 서술'},{p:/연구\s*보고서|R&E/,r:'연구보고서 기재 금지',a:'탐구 활동 참여 과정으로 서술'},{p:/부모님|아버지|어머니|가정\s*환경/,r:'가정환경·가족배경 암시',a:'학교 활동에서 보인 행동으로 서술'},{p:/느꼈다|깨달았다|다짐하였다|생각한다/,r:'교사 미관찰 내면 단정',a:'관찰된 행동·태도로 서술'},{p:/모든\s*면에서|전교\s*최고|최우수/,r:'근거 없는 최상급',a:'구체적 관찰 사실로 대체'}];for(var ai=0;ai<aiPats.length;ai++){var ap=aiPats[ai];if(ap.p.test(text)){results.push(createJudgmentResult({ruleId:'pattern-'+ap.r,severity:SEVERITY.CAUTION,expression:(text.match(ap.p)||[''])[0],reason:ap.r,source:'생기부 공통 안전 규칙',alternative:ap.a||'구체적 관찰 행동으로 대체',teacherCheck:'원문에 실제 근거 확인',sourceLevel:'national'}));}}
+// AI 패턴 검사 (PAPS 예외, K-MOOC·방과후는 forbiddenTerms에서 PROHIBITED 처리)
+var isPAPS=/(PAPS|학생건강체력평가)/.test(text)&&(resolved==='교과세특(체육·예술)');
+var aiPats=[{p:/매우\s*뛰어난/,r:'과장표현',a:'구체적 관찰 행동으로 대체'},{p:/반에서\s*가장/,r:'비교·서열화',a:'학생 개인의 행동으로만 서술'},{p:/항상/,r:'단정적 일반화',a:'구체적 관찰 사례로 대체'},{p:/큰\s*성장을\s*이룸/,r:'근거 없는 성장',a:'관찰된 구체적 변화로 대체'},{p:/여학생답게|남학생답게/,r:'성별 편향',a:'성별 무관한 행동 서술로 대체'},{p:/학원/,r:'사교육 언급',a:'학교 교육활동 참여로 대체'},{p:/\d+\s*점/,r:'점수 직접 노출',a:'구체적 학습 행동으로 대체'},{p:/[A-E]\s*등급|[1-9]\s*등급/,r:'등급 직접 노출',a:'성취 수준의 특성으로 서술'},{p:/\d+\s*등|석차|수석|차석/,r:'석차·순위 노출',a:'학생 개인의 행동으로만 서술'},{p:/연구\s*보고서|R&E/,r:'연구보고서 기재 금지',a:'탐구 활동 참여 과정으로 서술'},{p:/부모님|아버지|어머니|가정\s*환경/,r:'가정환경·가족배경 암시',a:'학교 활동에서 보인 행동으로 서술'},{p:/느꼈다|깨달았다|다짐하였다|생각한다/,r:'교사 미관찰 내면 단정',a:'관찰된 행동·태도로 서술'},{p:/모든\s*면에서|전교\s*최고|최우수/,r:'근거 없는 최상급',a:'구체적 관찰 사실로 대체'}];for(var ai=0;ai<aiPats.length;ai++){var ap=aiPats[ai];if(ap.p.test(text)){
+// PAPS 예외: 체육·예술 교과세특에서 PAPS 1등급 관련 패턴은 건너뜀
+if(isPAPS&&(ap.r==='등급 직접 노출'||ap.r==='석차·순위 노출'))continue;
+results.push(createJudgmentResult({ruleId:'pattern-'+ap.r,severity:SEVERITY.CAUTION,expression:(text.match(ap.p)||[''])[0],reason:ap.r,source:'생기부 공통 안전 규칙',alternative:ap.a||'구체적 관찰 행동으로 대체',teacherCheck:'원문에 실제 근거 확인',sourceLevel:'national'}));}}
 // 거짓 양성 필터링: 오탐 방지
+var bookTitleRanges=[];var btm;var btRe=/[『「《<"'](.*?)[』」》>"']/g;while((btm=btRe.exec(text))!==null){bookTitleRanges.push({start:btm.index,end:btm.index+btm[0].length,content:btm[0]});}
 results = results.filter(function(r) {
-  // '항상' 패턴이 '항상성', '항상적', '항상 일정' 안에서 매칭된 경우 제거
   if (r.ruleId === 'pattern-단정적 일반화' && /항상성|항상적|항상 일정/.test(text)) return false;
-  // '학원' 패턴이 과학원, 연구원, 교육원 등 기관명에서 매칭된 경우 제거  
-  if (r.ruleId === 'pattern-사교육 언급' && /과학원|연구원|교육원|박물관|체험관|지원청/.test(text)) return false;
-  // '수상' forbiddenTerms가 '수상한', '수상 스포츠' 등에서 매칭된 경우 제거
+  if (r.ruleId === 'pattern-사교육 언급' && /과학원|연구원|교육원|박물관|체험관|지원청|수산과학원|해양과학원|기상과학원|보건과학원|에너지기술연구원/.test(text)) return false;
   if (r.ruleId === 'forbidden-수상' && /수상한\s*(현상|것|느낌|점)|수상\s*스포츠|수상\s*안전|수상\s*구조|수상\s*레저/.test(text)) return false;
+  if (r.ruleId === 'forbidden-학원' && /과학원|연구원|교육원|박물관|체험관|지원청/.test(text)) return false;
+  // 도서명 안의 대학명·기관명 예외
+  if ((r.ruleId==='forbidden-서울대'||r.ruleId==='compound-대학명진학기재금지') && bookTitleRanges.some(function(br){return br.content.includes('서울대');})) {
+    if(!/진학|입학|합격|목표|지원/.test(text.replace(/[『「《<"'].*?[』」》>"']/g,''))) return false;
+  }
+  // PAPS 예외: forbiddenTerms의 1등 판정도 체육·예술에서 PAPS 문맥이면 제거
+  if (isPAPS && (r.ruleId === 'forbidden-1등' || r.ruleId === 'forbidden-1등급')) return false;
   return true;
 });
 // 개인정보 패턴
 if(/[가-힣]{2,4}\s*학생은/.test(text)){results.push(createJudgmentResult({ruleId:'privacy-name',severity:SEVERITY.CAUTION,expression:(text.match(/[가-힣]{2,4}\s*학생은/)||[''])[0],reason:'학생 실명 포함 가능성',source:'개인정보보호',alternative:'"해당 학생은"으로 대체',teacherCheck:'실명 제거 확인',sourceLevel:'national'}));}
-return results;}
+// 중복 판정 제거: 같은 ruleId는 한 번만 (가장 높은 심각도 유지)
+var seen={};var deduped=[];var sevOrder=[SEVERITY.INFO,SEVERITY.CAUTION,SEVERITY.REVISE,SEVERITY.PROHIBITED];results.forEach(function(r){if(!seen[r.ruleId]){seen[r.ruleId]=r;deduped.push(r);}else{var existing=seen[r.ruleId];if(sevOrder.indexOf(r.severity)>sevOrder.indexOf(existing.severity)){var idx=deduped.indexOf(existing);deduped[idx]=r;seen[r.ruleId]=r;}}});
+return deduped;}
 const RECORD_REGRESSION_SENTENCES=[{input:"학급회의에서 안건을 정리하고 발언 순서를 조율하며 회의 진행에 적극적으로 참여함.",item:"자율·자치활동",expected:{severity:null,pass:true},desc:"정상 기록문"},{input:"홍길동 학생은 2학년 3반에서 성실하게 생활함.",item:"행동특성 및 종합의견",expected:{severity:"CAUTION",reason:"개인정보"},desc:"개인정보 포함"},{input:"교외 영어경시대회에서 금상을 수상함.",item:"교과세특",expected:{severity:"PROHIBITED",reason:"교외실적+수상"},desc:"교외활동·수상"},{input:"매우 뛰어난 리더십을 발휘하며 반에서 가장 우수한 학생임.",item:"자율·자치활동",expected:{severity:"CAUTION",reason:"과장+비교"},desc:"과장·비교·서열"},{input:"여학생답게 꼼꼼하고 섬세한 태도를 보임.",item:"행동특성 및 종합의견",expected:{severity:"CAUTION",reason:"성별편향"},desc:"성별 편향"},{input:"학원에서 배운 내용을 수업에서 발표함.",item:"교과세특",expected:{severity:"CAUTION",reason:"사교육"},desc:"사교육 표현"},{input:"성실하게 노력하여 큰 성장을 이룸.",item:"진로활동",expected:{severity:"CAUTION",reason:"근거없는성장"},desc:"근거 없는 성장"},{input:"『나미야 잡화점의 기적』(히가시노 게이고)",item:"독서활동",expected:{severity:null,pass:true},desc:"독서활동 정상 형식"},{input:"『나미야 잡화점의 기적』을 읽고 삶의 의미에 대해 깊이 성찰하며 성장함.",item:"독서활동",expected:{severity:"REVISE",reason:"독서활동에부적절한서술"},desc:"독서활동 잘못된 형식"},{input:"가".repeat(251),item:"독서활동",expected:{severity:"REVISE",reason:"학교기준초과"},desc:"학교 기준 초과·국가 기준 이내 (251자>학교250자, 국가500자)",options:{useSchoolLimits:true,scope:"common"},dualCheck:true},{input:"가".repeat(501),item:"자율·자치활동",expected:{severity:"REVISE",reason:"글자수초과"},desc:"글자 수 초과"}];
 function runRecordRulesRegressionTests(){var results=[];var pass=0;var fail=0;RECORD_REGRESSION_SENTENCES.forEach(function(tc,i){var judgments=evaluateRecordText(tc.input,tc.item,tc.options||undefined);var topSeverity=null;if(judgments.length){var order=[SEVERITY.INFO,SEVERITY.CAUTION,SEVERITY.REVISE,SEVERITY.PROHIBITED];topSeverity=judgments.reduce(function(max,j){return order.indexOf(j.severity)>order.indexOf(max)?j.severity:max;},SEVERITY.INFO);}var ok=tc.expected.pass?(topSeverity===null||topSeverity===SEVERITY.INFO):(topSeverity===tc.expected.severity);var entry={index:i+1,desc:tc.desc,expectedSeverity:tc.expected.severity||'null(pass)',actualSeverity:topSeverity||'null(pass)',ruleIds:judgments.map(function(j){return j.ruleId;}),pass:ok,chars:tc.input.length,bytes:getNeisByte(tc.input)};if(tc.dualCheck){var nationalJ=evaluateRecordText(tc.input,tc.item,{useSchoolLimits:false,scope:tc.options&&tc.options.scope||'common'});var natTop=null;if(nationalJ.length){natTop=nationalJ.reduce(function(max,j){return [SEVERITY.INFO,SEVERITY.CAUTION,SEVERITY.REVISE,SEVERITY.PROHIBITED].indexOf(j.severity)>[SEVERITY.INFO,SEVERITY.CAUTION,SEVERITY.REVISE,SEVERITY.PROHIBITED].indexOf(max)?j.severity:max;},SEVERITY.INFO);}var nationalPass=(natTop===null||natTop===SEVERITY.INFO);var schoolSourceLevels=judgments.filter(function(j){return j.ruleId&&(j.ruleId.endsWith('-charlimit')||j.ruleId.endsWith('-bytelimit'));}).map(function(j){return j.sourceLevel;});entry.nationalPass=nationalPass;entry.schoolPass=ok;entry.nationalRuleIds=nationalJ.map(function(j){return j.ruleId;});entry.schoolRuleIds=entry.ruleIds;entry.schoolSourceLevels=schoolSourceLevels;ok=ok&&nationalPass;}if(ok)pass++;else fail++;entry.pass=ok;results.push(entry);});return{total:results.length,pass:pass,fail:fail,results:results,allPass:fail===0};}
 // ===== Stage 12 끝 =====
@@ -1286,15 +1297,26 @@ const STAGE13_REGRESSION_SENTENCES=[
 {input:"학급 임원으로서 학급회의에서 안건을 정리하고 발언 순서를 조율하며 민주적 분위기를 만드는 데 기여함.",item:"자율·자치활동",expected:{severity:null,pass:true},desc:"정상 문장 (기재 가능)"},
 {input:"TOEIC 850점을 취득하여 영어 능력이 우수함.",item:"교과세특",expected:{severity:"PROHIBITED"},desc:"공인어학시험 점수 기재 금지"},
 {input:"한국사능력검정 1급에 합격하여 역사적 이해가 깊음.",item:"교과세특",expected:{severity:"PROHIBITED"},desc:"자격증 취득 기재 금지"},
-{input:"서울대학교 진학을 목표로 열심히 노력함.",item:"진로활동",expected:{severity:"PROHIBITED"},desc:"특정 대학명 기재 금지"},
+{input:"서울대학교 진학을 목표로 열심히 노력함.",item:"진로활동",expected:{severity:"PROHIBITED"},desc:"특정 대학명(전체명) 기재 금지"},
 {input:"수학 성적이 A등급으로 우수한 학업 성취도를 보임.",item:"교과세특",expected:{severity:"CAUTION"},desc:"등급 직접 노출"},
 {input:"학교스포츠클럽(배드민턴)에 참여하며 기초 기능을 꾸준히 연습함.",item:"동아리활동",expected:{severity:null,pass:true},desc:"학교스포츠클럽 예외 (정상)"},
 {input:"PAPS 1등급을 달성하여 체력이 우수함.",item:"교과세특(체육·예술)",expected:{severity:null,pass:true},desc:"PAPS 1등급 예외 (체육 교과세특)"},
-{input:"K-MOOC 강좌를 수강하여 프로그래밍 기초를 학습함.",item:"교과세특",expected:{severity:"CAUTION"},desc:"K-MOOC 기재 금지"},
-{input:"방과후학교 로봇 수업에서 설계와 제작을 경험함.",item:"교과세특",expected:{severity:"CAUTION"},desc:"방과후학교 기재 금지"},
+{input:"K-MOOC 강좌를 수강하여 프로그래밍 기초를 학습함.",item:"교과세특",expected:{severity:"PROHIBITED"},desc:"K-MOOC 기재 금지"},
+{input:"방과후학교 로봇 수업에서 설계와 제작을 경험함.",item:"교과세특",expected:{severity:"PROHIBITED"},desc:"방과후학교 기재 금지"},
 {input:"교육청 주관 과학 행사에 참여하며 탐구 역량을 넓힘.",item:"교과세특",expected:{severity:null,pass:true},desc:"교육관련기관 예외 (정상)"},
 {input:"『데미안』(헤르만 헤세)",item:"독서활동",expected:{severity:null,pass:true},desc:"독서활동 정상 형식"},
-{input:"사회 시간에 지역사회 봉사 활동에 대해 조사하고 발표하는 과정에서 공동체 의식의 중요성을 이해하려는 태도를 보임.",item:"교과세특",expected:{severity:null,pass:true},desc:"긴 정상 문장 (거짓 양성 방지)"}
+{input:"사회 시간에 지역사회 봉사 활동에 대해 조사하고 발표하는 과정에서 공동체 의식의 중요성을 이해하려는 태도를 보임.",item:"교과세특",expected:{severity:null,pass:true},desc:"긴 정상 문장 (거짓 양성 방지)"},
+{input:"세포의 항상성을 유지하는 원리를 설명함.",item:"교과세특",expected:{severity:null,pass:true},desc:"항상성 거짓 양성 방지"},
+{input:"국립수산과학원 자료를 활용하여 해양 생태계를 조사함.",item:"교과세특",expected:{severity:null,pass:true},desc:"과학원 거짓 양성 방지"},
+{input:"수상 스포츠 안전 수칙을 조사하고 발표함.",item:"교과세특",expected:{severity:null,pass:true},desc:"수상 스포츠 거짓 양성 방지"},
+{input:"『서울대 공원에서 만난 생태계』(홍길동)",item:"독서활동",expected:{severity:null,pass:true},desc:"도서명 안의 대학명 거짓 양성 방지"},
+{input:"『나미야 잡화점의 기적』을 읽고 삶의 의미에 대해 깊이 성찰하며 성장함.",item:"독서활동",expected:{severity:"REVISE"},desc:"독서 부적절 서술 (중복 판정 제거)"},
+{input:"교외 영어경시대회에서 금상을 수상함.",item:"교과세특",expected:{severity:"PROHIBITED"},desc:"교외 대회·수상"},
+{input:"여학생답게 꼼꼼하고 섬세한 태도를 보임.",item:"행동특성 및 종합의견",expected:{severity:"CAUTION"},desc:"성별 편향"},
+{input:"부모님이 의사라서 의학에 관심이 많음.",item:"진로활동",expected:{severity:"CAUTION"},desc:"가정환경·가족배경"},
+{input:"봉사활동을 통해 봉사의 의미를 깊이 깨달았다.",item:"자율·자치활동",expected:{severity:"CAUTION"},desc:"교사 미관찰 내면 단정"},
+{input:"모든 면에서 뛰어난 역량을 발휘함.",item:"교과세특",expected:{severity:"CAUTION"},desc:"근거 없는 최상급"},
+{input:"시험에서 1등을 하여 실력이 우수함.",item:"교과세특",expected:{severity:"CAUTION"},desc:"석차·순위 (비PAPS)"}
 ];
 function runStage13RegressionTests(){var results=[];var pass=0;var fail=0;STAGE13_REGRESSION_SENTENCES.forEach(function(tc,i){var judgments=evaluateRecordText(tc.input,tc.item,tc.options||undefined);var topSeverity=null;if(judgments.length){var order=[SEVERITY.INFO,SEVERITY.CAUTION,SEVERITY.REVISE,SEVERITY.PROHIBITED];topSeverity=judgments.reduce(function(max,j){return order.indexOf(j.severity)>order.indexOf(max)?j.severity:max;},SEVERITY.INFO);}var ok=tc.expected.pass?(topSeverity===null||topSeverity===SEVERITY.INFO):(topSeverity===tc.expected.severity);if(ok)pass++;else fail++;results.push({index:i+1,desc:tc.desc,expectedSeverity:tc.expected.severity||'null(pass)',actualSeverity:topSeverity||'null(pass)',ruleIds:judgments.map(function(j){return j.ruleId;}),pass:ok});});return{total:results.length,pass:pass,fail:fail,results:results,allPass:fail===0};}
 // ===== Stage 13 끝 =====
