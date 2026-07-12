@@ -923,49 +923,117 @@ function safeJsonParse(str, fallback) {
 function sanitizeForStorage(value, context) {
   if (!value || typeof value !== 'string') return value || '';
   let safe = value;
-  // 관찰 원문 제거
+  // === 명확한 시작·끝 경계 블록 제거 ===
   safe = safe.replace(/\[이번 작성의 실제 관찰·활동 자료 시작\][\s\S]*?\[이번 작성의 실제 관찰·활동 자료 끝\]/g, '[관찰자료: 개인정보 보호를 위해 저장하지 않음]');
-  // 문체 예시문 제거
   safe = safe.replace(/\[문체 참고 예시문 시작\][\s\S]*?\[문체 참고 예시문 끝\]/g, '[문체 예시문: 개인정보 보호를 위해 저장하지 않음]');
-  // 관찰 내용 블록 제거
-  safe = safe.replace(/\[관찰 내용\]\n[\s\S]*?\n\n/g, '[관찰 내용]\n저장하지 않음\n\n');
-  // 검토 데이터 블록 제거 (신호등 검사 원문)
-  safe = safe.replace(/\[검토 데이터 시작\][\s\S]*?\[검토 데이터 끝\]/g, '[검토 데이터: 개인정보 보호를 위해 저장하지 않음]');
-  // 검사할 문장 블록 제거 (편향 검사, 최종 점검)
-  safe = safe.replace(/\[검사할 문장 시작\][\s\S]*?\[검사할 문장 끝\]/g, '[검사할 문장: 개인정보 보호를 위해 저장하지 않음]');
-  safe = safe.replace(/\[검사할 문장\]\n[\s\S]*?\n\n/g, '[검사할 문장]\n저장하지 않음\n\n');
-  // 다듬을 초안 문장 제거 (CPR)
-  safe = safe.replace(/\[다듬을 초안 문장 시작\][\s\S]*?\[다듬을 초안 문장 끝\]/g, '[다듬을 초안 문장: 개인정보 보호를 위해 저장하지 않음]');
-  // 거꾸로생성 원본 자료 제거
-  safe = safe.replace(/\[기존 자료 시작\][\s\S]*?\[기존 자료 끝\]/g, '[기존 자료: 개인정보 보호를 위해 저장하지 않음]');
-  // 메인화면(GENERAL) 요청 원문 제거
-  safe = safe.replace(/\[요청 시작\][\s\S]*?\[요청 끝\]/g, '[요청: 개인정보 보호를 위해 저장하지 않음]');
-  // 메인 첨부파일 세부조건 제거
-  safe = safe.replace(/\[특히 확인할 내용 시작\][\s\S]*?\[특히 확인할 내용 끝\]/g, '[특히 확인할 내용: 개인정보 보호를 위해 저장하지 않음]');
-  // 생기부 추가 조건 제거
   safe = safe.replace(/\[추가 조건 시작\][\s\S]*?\[추가 조건 끝\]/g, '[추가 조건: 개인정보 보호를 위해 저장하지 않음]');
+  safe = safe.replace(/\[검토 데이터 시작\][\s\S]*?\[검토 데이터 끝\]/g, '[검토 데이터: 개인정보 보호를 위해 저장하지 않음]');
+  safe = safe.replace(/\[검사할 문장 시작\][\s\S]*?\[검사할 문장 끝\]/g, '[검사할 문장: 개인정보 보호를 위해 저장하지 않음]');
+  safe = safe.replace(/\[다듬을 초안 문장 시작\][\s\S]*?\[다듬을 초안 문장 끝\]/g, '[다듬을 초안 문장: 개인정보 보호를 위해 저장하지 않음]');
+  safe = safe.replace(/\[기존 자료 시작\][\s\S]*?\[기존 자료 끝\]/g, '[기존 자료: 개인정보 보호를 위해 저장하지 않음]');
+  safe = safe.replace(/\[요청 시작\][\s\S]*?\[요청 끝\]/g, '[요청: 개인정보 보호를 위해 저장하지 않음]');
+  safe = safe.replace(/\[특히 확인할 내용 시작\][\s\S]*?\[특히 확인할 내용 끝\]/g, '[특히 확인할 내용: 개인정보 보호를 위해 저장하지 않음]');
+  safe = safe.replace(/\[첨부 세부 요청 시작\][\s\S]*?\[첨부 세부 요청 끝\]/g, '[첨부 세부 요청: 개인정보 보호를 위해 저장하지 않음]');
+  // === 레거시 비경계 블록 호환 ===
+  safe = safe.replace(/\[관찰 내용\]\n[\s\S]*?\n\n/g, '[관찰 내용]\n저장하지 않음\n\n');
+  safe = safe.replace(/\[검사할 문장\]\n[\s\S]*?\n\n/g, '[검사할 문장]\n저장하지 않음\n\n');
   // 관찰·활동 파일명 제거
-  safe = safe.replace(/\[관찰·활동 파일\]\n[\s\S]*?\n\n/g, '[관찰·활동 파일]\n개인정보 보호를 위해 파일명을 저장하지 않음\n\n');
-  safe = safe.replace(/\[선택한 활동파일\]\n[\s\S]*?\n\n/g, '[선택한 활동파일]\n개인정보 보호를 위해 파일명을 저장하지 않음\n\n');
-  safe = safe.replace(/\[선택한 출력형식파일\]\n[\s\S]*?\n\n/g, '[선택한 출력형식파일]\n개인정보 보호를 위해 파일명을 저장하지 않음\n\n');
+  safe = safe.replace(/\[관찰·활동 파일\]\n[\s\S]*?\n\n/g, '[관찰·활동 파일]\n파일명 저장하지 않음\n\n');
+  safe = safe.replace(/\[선택한 활동파일\]\n[\s\S]*?\n\n/g, '[선택한 활동파일]\n파일명 저장하지 않음\n\n');
+  safe = safe.replace(/\[선택한 출력형식파일\]\n[\s\S]*?\n\n/g, '[선택한 출력형식파일]\n파일명 저장하지 않음\n\n');
   // 웹사이트 1차 검사 결과 행 블록 제거 (레거시 호환)
-  safe = safe.replace(/\[웹사이트 1차 검사 결과\]\n[\s\S]*$/g, '[웹사이트 1차 검사 결과]\n개인정보 보호를 위해 저장하지 않음');
+  safe = safe.replace(/\[웹사이트 1차 검사 결과\]\n[\s\S]*$/g, '[웹사이트 1차 검사 결과]\n저장하지 않음');
   // 파일명 패턴 제거 (- 파일명.확장자)
   safe = safe.replace(/^- .+\.(xlsx|xls|csv|tsv|txt|pdf|hwp|hwpx|docx|pptx)$/gm, '- [파일명 저장하지 않음]');
   return safe;
 }
 
-// 결과 모드별 안전한 입력 요약명
-function getSafeInputLabel(resultMode) {
+// 결과 모드별 안전한 입력 요약명 (사용자 원문 절대 사용 금지)
+function getSafeInputLabel(resultMode, rawInput) {
+  // rawInput은 참고하지 않음 — 고정된 안전 기능명만 반환
   const labels = {
     'RECORD_DRAFT': '생기부 작성 프롬프트',
     'TRAFFIC_REVIEW': '생기부 신호등 검토 프롬프트',
     'CPR_REVIEW': '생기부 문장 CPR 프롬프트',
-    'FINAL_RECORD_CHECK': '생기부 최종·편향 점검 프롬프트',
+    'FINAL_RECORD_CHECK': '생기부 최종 점검 프롬프트',
+    'BIAS_REVIEW': '생기부 편향 검사 프롬프트',
     'REVERSE': '거꾸로 생성 프롬프트',
-    'GENERAL': '메인 프롬프트 요청'
+    'GENERAL': '일반 프롬프트'
   };
-  return labels[resultMode] || '';
+  // GENERAL의 경우 교육/일반 구분
+  if (resultMode === 'GENERAL') {
+    if (rawInput && detectEducationContext(rawInput)) return '교육 프롬프트';
+    return '일반 프롬프트';
+  }
+  return labels[resultMode] || '프롬프트';
+}
+
+// 영속 저장용 프롬프트 정제 — 사용자 원문을 모두 제거
+function sanitizePromptForPersistentStorage(prompt, resultMode, rawInput) {
+  if (!prompt || typeof prompt !== 'string') return '';
+  // 1단계: 기존 sanitizeForStorage 실행
+  let safe = sanitizeForStorage(prompt, resultMode);
+  // 2단계: 명확한 경계 블록 내부 제거
+  safe = safe.replace(/\[이번 작성의 실제 관찰·활동 자료 시작\][\s\S]*?\[이번 작성의 실제 관찰·활동 자료 끝\]/g, '[관찰자료: 저장하지 않음]');
+  safe = safe.replace(/\[문체 참고 예시문 시작\][\s\S]*?\[문체 참고 예시문 끝\]/g, '[문체 예시문: 저장하지 않음]');
+  safe = safe.replace(/\[추가 조건 시작\][\s\S]*?\[추가 조건 끝\]/g, '[추가 조건: 저장하지 않음]');
+  safe = safe.replace(/\[검토 데이터 시작\][\s\S]*?\[검토 데이터 끝\]/g, '[검토 데이터: 저장하지 않음]');
+  safe = safe.replace(/\[다듬을 초안 문장 시작\][\s\S]*?\[다듬을 초안 문장 끝\]/g, '[다듬을 초안: 저장하지 않음]');
+  safe = safe.replace(/\[검사할 문장 시작\][\s\S]*?\[검사할 문장 끝\]/g, '[검사할 문장: 저장하지 않음]');
+  safe = safe.replace(/\[기존 자료 시작\][\s\S]*?\[기존 자료 끝\]/g, '[기존 자료: 저장하지 않음]');
+  safe = safe.replace(/\[첨부 세부 요청 시작\][\s\S]*?\[첨부 세부 요청 끝\]/g, '[첨부 세부 요청: 저장하지 않음]');
+  safe = safe.replace(/\[요청 시작\][\s\S]*?\[요청 끝\]/g, '{{요청 내용}}');
+  safe = safe.replace(/\[특히 확인할 내용 시작\][\s\S]*?\[특히 확인할 내용 끝\]/g, '[특히 확인할 내용: 저장하지 않음]');
+  // 3단계: GENERAL이면 rawInput과 일치하는 부분을 {{요청 내용}}으로 치환
+  if (resultMode === 'GENERAL' && rawInput && rawInput.trim()) {
+    const escaped = rawInput.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(escaped, 'g');
+    safe = safe.replace(re, '{{요청 내용}}');
+  }
+  // 4단계: REVERSE이면 기존 자료 잔존 확인
+  if (resultMode === 'REVERSE' && rawInput && rawInput.trim().length > 10) {
+    const snippet = rawInput.trim().substring(0, 30).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (new RegExp(snippet).test(safe)) {
+      safe = safe.replace(new RegExp(rawInput.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '[기존 자료: 저장하지 않음]');
+    }
+  }
+  // 5단계: 파일명 패턴 제거
+  safe = safe.replace(/^- .+\.(xlsx|xls|csv|tsv|txt|pdf|hwp|hwpx|docx|pptx)$/gm, '- [파일명 저장하지 않음]');
+  // 6단계: 최종 확인 — rawInput 잔존 검사
+  if (rawInput && rawInput.trim().length > 5) {
+    const checkStr = rawInput.trim();
+    if (safe.includes(checkStr)) {
+      // 잔존하면 null 반환 (저장 중단 신호)
+      return null;
+    }
+  }
+  return safe;
+}
+
+// 안전한 최근 사용 항목 생성
+function createSafeRecentEntry(resultMode, rawInput, attachmentUsed) {
+  return {
+    label: getSafeInputLabel(resultMode, rawInput),
+    resultMode: resultMode || 'GENERAL',
+    time: Date.now(),
+    attachmentUsed: !!attachmentUsed
+  };
+}
+
+// 안전한 즐겨찾기 항목 생성
+function createSafeFavoriteEntry(resultMode, rawInput, prompt, attachmentUsed) {
+  const safePrompt = sanitizePromptForPersistentStorage(prompt, resultMode, rawInput);
+  if (safePrompt === null) {
+    // 개인정보가 남아 있어 저장 불가
+    return null;
+  }
+  return {
+    input: getSafeInputLabel(resultMode, rawInput),
+    prompt: safePrompt,
+    resultMode: resultMode || 'GENERAL',
+    time: Date.now(),
+    attachmentUsed: !!attachmentUsed
+  };
 }
 
 // ===== 복사 모달 접근성 =====
@@ -1200,7 +1268,7 @@ function buildMainAttachmentInstructions(attachment) {
     p += `[파일 활용 목적]\n${purposeMap[attachment.purpose] || attachment.purpose}\n\n`;
   }
   if (attachment.detail) {
-    p += `[특히 확인할 내용 시작]\n${attachment.detail}\n[특히 확인할 내용 끝]\n\n`;
+    p += `[첨부 세부 요청 시작]\n${attachment.detail}\n[첨부 세부 요청 끝]\n\n`;
   }
   return p;
 }
@@ -2029,24 +2097,24 @@ function buildPrintableDocumentPrompt(a, role, gradeText, subjectText, topicText
 let p = `너는 ${role}야.\n\n`;
 if (a.primaryType === '활동지' || a.primaryType === '수행평가') {
 p += `아래 조건에 맞는 완성된 활동지를 지금 바로 작성해줘. 활동지 제작 방법이나 구성 안내를 설명하지 말고, 학생에게 바로 배부할 수 있는 최종 완성본을 출력해줘.\n\n`;
-p += `[요청]\n${a.originalRequest}\n\n`;
+p += `[요청 시작]\n${a.originalRequest}\n[요청 끝]\n\n`;
 p += `[기본 정보]\n- 과목: ${subjectText}\n- 대상: ${a.target}\n- 학년: ${gradeText}\n- 주제: ${topicText}\n- 분량: ${lengthText || 'A4 1~2장'}\n\n`;
 p += `[필수 포함 요소]\n- 제목\n- 학년·과목 표시\n- 학습목표\n- 학생 이름·반·번호 칸\n- 활동 안내\n- 학생이 실제 작성할 문항 (빈칸 또는 작성 공간 포함)\n`;
 if (a.originalRequest.includes('모둠')) { p += `- 모둠 역할 배분 (기록자, 발표자, 자료수집, 진행자 등)\n- 모둠 활동 진행 단계\n`; }
 p += `- 정리 또는 자기점검 영역\n- A4 인쇄 가능한 레이아웃\n- 교사용 정답·예시답안이 필요하면 학생용과 별도 구분\n\n`;
 } else if (a.primaryType === '루브릭' || a.primaryType === '평가표' || a.primaryType === '평가자료') {
 p += `아래 조건에 맞는 완성된 평가 루브릭(채점기준표)을 지금 바로 작성해줘. 평가기준 설명이나 구성 방법을 안내하지 말고, 실제 채점에 바로 사용할 수 있는 최종 완성 표를 출력해줘.\n\n`;
-p += `[요청]\n${a.originalRequest}\n\n`;
+p += `[요청 시작]\n${a.originalRequest}\n[요청 끝]\n\n`;
 p += `[기본 정보]\n- 과목: ${subjectText}\n- 대상: ${a.target}\n- 학년: ${gradeText}\n- 주제: ${topicText}\n\n`;
 p += `[필수 포함 요소]\n- 평가 목적\n- 평가요소 (3~5개)\n- 수준별 수행기준 (3~5단계)\n- 각 수준의 관찰 가능한 행동 기술\n- 수준 간 명확한 차이\n- 배점\n- 총점\n- 실제 채점 가능한 완성 표\n\n`;
 } else if (a.primaryType === '체크리스트') {
 p += `아래 조건에 맞는 완성된 체크리스트를 지금 바로 작성해줘. 체크리스트 작성 방법을 설명하지 말고, 바로 인쇄하거나 복사해서 사용할 수 있는 최종 완성본을 출력해줘.\n\n`;
-p += `[요청]\n${a.originalRequest}\n\n`;
+p += `[요청 시작]\n${a.originalRequest}\n[요청 끝]\n\n`;
 p += `[기본 정보]\n- 대상: ${a.target}\n- 주제: ${topicText}\n\n`;
 p += `[필수 포함 요소]\n- 실제 체크박스 형태\n- 점검 항목 (논리적 순서)\n- 확인 기준\n- 필요한 경우 담당 또는 비고 칸\n- 바로 인쇄하거나 복사할 수 있는 형식\n\n`;
 } else {
 p += `아래 조건에 맞는 완성된 ${a.primaryType}을(를) 지금 바로 작성해줘. 제작 방법이나 구성 안내를 설명하지 말고, 실제 현장에서 바로 인쇄·사용할 수 있는 최종 완성본을 출력해줘.\n\n`;
-p += `[요청]\n${a.originalRequest}\n\n[기본 정보]\n- 과목: ${subjectText}\n- 대상: ${a.target}\n- 학년: ${gradeText}\n- 주제: ${topicText}\n- 분량: ${lengthText}\n\n`;
+p += `[요청 시작]\n${a.originalRequest}\n[요청 끝]\n\n[기본 정보]\n- 과목: ${subjectText}\n- 대상: ${a.target}\n- 학년: ${gradeText}\n- 주제: ${topicText}\n- 분량: ${lengthText}\n\n`;
 }
 p += `[작성 원칙]\n1. 교사가 추가 작업 없이 바로 인쇄·사용할 수 있는 완성본을 작성해줘.\n2. 요청에 없는 학교명, 날짜, 학생 정보는 임의로 만들지 마.\n3. 꼭 교사가 바꿔야 하는 정보만 [대괄호]로 표시하고 최소화해줘.\n4. 대상 학년이 이해할 수 있는 어휘와 문장 길이를 사용해줘.\n5. 맞춤법과 형식 오류가 없게 작성해줘.\n\n`;
 p += buildQualityCheck(a.primaryType);
@@ -2058,19 +2126,19 @@ function buildFinalTextPrompt(a, role, gradeText, subjectText, topicText, length
 let p = `너는 ${role}야.\n\n`;
 if (a.primaryType === '안내문' || a.primaryType === '공지문') {
 p += `아래 조건에 맞는 완성된 ${a.primaryType}을(를) 지금 바로 작성해줘. 작성 방법이나 추천 문구를 여러 개 나열하지 말고, 그대로 발송·게시할 수 있는 최종 문안을 출력해줘.\n\n`;
-p += `[요청]\n${a.originalRequest}\n\n[기본 정보]\n- 대상: ${a.target}\n- 학년: ${gradeText}\n- 주제: ${topicText}\n\n`;
+p += `[요청 시작]\n${a.originalRequest}\n[요청 끝]\n\n[기본 정보]\n- 대상: ${a.target}\n- 학년: ${gradeText}\n- 주제: ${topicText}\n\n`;
 p += `[필수 포함 요소]\n- 제목\n- 대상\n- 핵심 안내 내용\n- 일정·장소·준비물 (해당하는 경우)\n- 유의사항\n- 문의 안내\n- 필요한 경우만 자리표시자 ([날짜], [장소] 등)\n- 그대로 발송 가능한 최종 문안\n\n`;
 p += `[금지]\n- 가짜 날짜·장소·연락처 생성 금지\n- 작성 방법 설명 금지\n- 여러 버전 추천 금지\n\n`;
 } else if (a.primaryType === '피드백') {
 p += `아래 조건에 맞는 완성된 학생 피드백 문장을 지금 바로 작성해줘. 피드백 작성 방법을 설명하지 말고, 학생에게 직접 전달할 수 있는 최종 피드백 문장을 출력해줘.\n\n`;
-p += `[요청]\n${a.originalRequest}\n\n[기본 정보]\n- 대상: ${a.target}\n- 학년: ${gradeText}\n\n`;
+p += `[요청 시작]\n${a.originalRequest}\n[요청 끝]\n\n[기본 정보]\n- 대상: ${a.target}\n- 학년: ${gradeText}\n\n`;
 p += `[필수 포함 요소]\n- 제공된 활동과 결과에 근거한 내용\n- 잘한 점 (구체적 행동 기반)\n- 개선할 점 (구체적 방향 제시)\n- 다음 행동 제안\n- 학생에게 직접 전달 가능한 말투\n- 추상적인 칭찬만 사용하지 않기\n- 제공되지 않은 성취나 태도 생성 금지\n\n`;
 } else if (a.primaryType === '생활지도') {
 p += `아래 조건에 맞는 완성된 생활지도 문구를 지금 바로 작성해줘. 지도 방법론을 설명하지 말고, 교사가 실제 상황에서 바로 말할 수 있는 최종 문구를 출력해줘.\n\n`;
-p += `[요청]\n${a.originalRequest}\n\n[기본 정보]\n- 대상: ${a.target}\n- 상황: ${topicText}\n\n`;
+p += `[요청 시작]\n${a.originalRequest}\n[요청 끝]\n\n[기본 정보]\n- 대상: ${a.target}\n- 상황: ${topicText}\n\n`;
 p += `[필수 포함 요소]\n- 상황 설명\n- 교사의 기준 전달\n- 학생의 선택 유도\n- 후속 행동 안내\n- 실제 교사가 말로 전달하기 자연스러운 문장\n\n`;
 } else {
-p += `아래 조건에 맞는 완성된 결과물을 지금 바로 작성해줘.\n\n[요청]\n${a.originalRequest}\n\n[기본 정보]\n- 대상: ${a.target}\n- 학년: ${gradeText}\n- 주제: ${topicText}\n\n`;
+p += `아래 조건에 맞는 완성된 결과물을 지금 바로 작성해줘.\n\n[요청 시작]\n${a.originalRequest}\n[요청 끝]\n\n[기본 정보]\n- 대상: ${a.target}\n- 학년: ${gradeText}\n- 주제: ${topicText}\n\n`;
 }
 p += `[작성 원칙]\n1. 교사가 추가 작업 없이 바로 전달·게시·사용할 수 있는 완성본을 작성해줘.\n2. 요청에 없는 학교명, 날짜, 학생 정보는 임의로 만들지 마.\n3. 꼭 교사가 바꿔야 하는 정보만 [대괄호]로 표시하고 최소화해줘.\n4. 대상의 눈높이에 맞는 어휘와 문장을 사용해줘.\n5. 맞춤법과 형식 오류가 없게 작성해줘.\n\n`;
 p += buildQualityCheck(a.primaryType);
@@ -2081,7 +2149,7 @@ return p;
 function buildExecutablePlanPrompt(a, role, gradeText, subjectText, topicText, lengthText) {
 let p = `너는 ${role}야.\n\n`;
 p += `아래 조건에 맞는 완성된 ${a.primaryType}을(를) 지금 바로 작성해줘. 수업 아이디어 목록만 나열하지 말고, 실제 수업에서 바로 실행할 수 있는 최종 수업 설계를 출력해줘.\n\n`;
-p += `[요청]\n${a.originalRequest}\n\n`;
+p += `[요청 시작]\n${a.originalRequest}\n[요청 끝]\n\n`;
 p += `[기본 정보]\n- 과목: ${subjectText}\n- 대상: ${a.target}\n- 학년: ${gradeText}\n- 주제: ${topicText}\n- 분량: ${lengthText || '1차시(45분) 기준'}\n\n`;
 p += `[필수 포함 요소]\n- 수업목표 (구체적·관찰 가능한 행동으로 기술)\n- 준비물\n- 도입 (동기유발, 전시학습 확인)\n- 전개 (학생 활동, 교사 발문, 예상 학생 반응)\n- 시간 배분 (단계별)\n- 정리 (핵심 정리, 차시 예고)\n- 평가 또는 확인 방법\n- 실제 수업에서 바로 실행 가능한 구체적 단계\n\n`;
 if (a.timeLimit) { p += `[시간 조건]\n${a.timeLimit} 기준으로 시간을 배분해줘.\n\n`; }
@@ -2094,7 +2162,7 @@ return p;
 function buildDefaultPrompt(a, role, gradeText, subjectText, topicText, lengthText) {
 let p = `너는 ${role}야.\n\n`;
 p += `아래 교사의 요청을 바탕으로 실제 중학교 현장에서 바로 사용할 수 있는 최종 결과물을 만들어줘.\n\n`;
-p += `[교사의 원래 요청]\n${a.originalRequest}\n\n`;
+p += `[요청 시작]\n${a.originalRequest}\n[요청 끝]\n\n`;
 p += `[요청 해석]\n- 결과물 유형: ${a.primaryType}\n- 과목: ${subjectText}\n- 대상: ${a.target}\n- 학년: ${gradeText}\n- 핵심 주제: ${topicText}\n- 분량: ${lengthText}\n\n`;
 p += `[작성 원칙]\n1. 교사가 추가 작업 없이 복사하여 사용할 수 있는 완성본을 작성해줘.\n2. 요청에 없는 학교명, 날짜, 학생 정보, 실제 규정은 임의로 만들지 마.\n3. 정보가 부족하면 중학교 현장에 가장 일반적이고 안전한 조건을 적용해줘.\n4. 꼭 교사가 바꿔야 하는 정보만 대괄호로 표시하고 최소화해줘.\n5. 대상 학년이 이해할 수 있는 어휘와 문장 길이를 사용해줘.\n6. 결과물 유형에 맞는 실제 형식을 사용해줘.\n7. 제목만 제시하거나 작성 방법을 설명하지 말고 완성된 결과물을 작성해줘.\n\n`;
 p += buildQualityCheck(a.primaryType);
@@ -2152,7 +2220,7 @@ CARD_NEWS: {
 };
 const t = typeInstructions[mode] || typeInstructions.PRESENTATION;
 let p = `너는 ${role}야.\n\n${t.intro}\n\n`;
-p += `[요청]\n${a.originalRequest}\n\n`;
+p += `[요청 시작]\n${a.originalRequest}\n[요청 끝]\n\n`;
 p += `[기본 정보]\n- 과목: ${subjectText}\n- 대상: ${a.target}\n- 학년: ${gradeText}\n- 주제: ${topicText}\n\n`;
 p += t.elements + `\n`;
 p += `[작성 원칙]\n1. 교사가 추가 작업 없이 바로 사용할 수 있는 완성본을 작성해줘.\n2. 요청에 없는 학교명, 날짜, 학생 정보는 임의로 만들지 마.\n3. 대상 학년이 이해할 수 있는 수준으로 작성해줘.\n4. 맞춤법과 형식 오류가 없게 작성해줘.\n\n`;
@@ -2179,7 +2247,7 @@ function buildMainInputRecordPrompt(input) {
   p += `[영역] ${detectedItem}\n`;
   p += `[NEIS 입력 필드] ${ctx.neisField}\n`;
   p += `[목적] ${ctx.purpose}\n\n`;
-  p += `[교사의 원래 요청]\n${input}\n\n`;
+  p += `[요청 시작]\n${input}\n[요청 끝]\n\n`;
   p += `[문체 규칙]\n`;
   p += `- 관찰자(교사) 시점으로 작성\n`;
   p += `- "${ctx.endingType}" 어미로 종결 (~함, ~음, ~임)\n`;
@@ -3470,18 +3538,130 @@ function initSitesTable(){const tbody=document.getElementById('sites-tbody');tbo
 // ===== 토스트 =====
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.remove('hidden');setTimeout(()=>t.classList.add('hidden'),3000);}
 
-// ===== 최근 기록 (localStorage) =====
-function saveToRecent(input,prompt){let r=safeJsonParse(localStorage.getItem(STORAGE_KEYS.recent),[]);const safeInputRaw=sanitizeForStorage(input,'recent');const safeInput=safeInputRaw.length>24?safeInputRaw.substring(0,24)+'…':safeInputRaw;r.unshift({input:safeInput,prompt:sanitizeForStorage(prompt,'recent').substring(0,200),time:Date.now()});if(r.length>5)r=r.slice(0,5);localStorage.setItem(STORAGE_KEYS.recent,JSON.stringify(r));renderRecent();}
-function renderRecent(){const c=document.getElementById('recent-section');if(!c)return;const r=safeJsonParse(localStorage.getItem(STORAGE_KEYS.recent),[]);if(r.length===0){c.classList.add('hidden');c.innerHTML='';return;}c.classList.remove('hidden');c.innerHTML='';const header=document.createElement('div');header.className='recent-header';const title=document.createElement('h3');title.className='recent-title';title.textContent='최근에 만든 것';header.appendChild(title);const clearBtn=document.createElement('button');clearBtn.className='recent-clear-btn';clearBtn.textContent='기록 지우기';clearBtn.onclick=clearRecent;header.appendChild(clearBtn);c.appendChild(header);r.forEach((item,i)=>{const div=document.createElement('div');div.className='recent-item';div.onclick=()=>loadRecent(i);const txt=document.createElement('span');txt.className='recent-item-text';txt.textContent=item.input||'';div.appendChild(txt);const time=document.createElement('span');time.className='recent-item-time';time.textContent=getTimeAgo(item.time);div.appendChild(time);c.appendChild(div);});}
-function clearRecent(){localStorage.removeItem(STORAGE_KEYS.recent);renderRecent();showToast('최근 기록을 삭제했습니다');}
-function loadRecent(idx){const r=safeJsonParse(localStorage.getItem(STORAGE_KEYS.recent),[]);if(!r[idx])return;document.getElementById('main-input').value=r[idx].input;generatePrompt();}
+// ===== 최근 기록 (localStorage) — 안전한 메타데이터만 저장 =====
+function saveToRecent(input, prompt) {
+  const attachmentUsed = !!(getMainAttachmentOptions && getMainAttachmentOptions()?.enabled);
+  const entry = createSafeRecentEntry(currentResultMode, input, attachmentUsed);
+  let r = safeJsonParse(localStorage.getItem(STORAGE_KEYS.recent), []);
+  r.unshift(entry);
+  if (r.length > 5) r = r.slice(0, 5);
+  localStorage.setItem(STORAGE_KEYS.recent, JSON.stringify(r));
+  renderRecent();
+}
+function renderRecent() {
+  const c = document.getElementById('recent-section');
+  if (!c) return;
+  const r = safeJsonParse(localStorage.getItem(STORAGE_KEYS.recent), []);
+  if (r.length === 0) { c.classList.add('hidden'); c.innerHTML = ''; return; }
+  c.classList.remove('hidden'); c.innerHTML = '';
+  const header = document.createElement('div'); header.className = 'recent-header';
+  const title = document.createElement('h3'); title.className = 'recent-title'; title.textContent = '최근에 만든 것';
+  header.appendChild(title);
+  const clearBtn = document.createElement('button'); clearBtn.className = 'recent-clear-btn'; clearBtn.textContent = '기록 지우기'; clearBtn.onclick = clearRecent;
+  header.appendChild(clearBtn); c.appendChild(header);
+  r.forEach((item, i) => {
+    const div = document.createElement('div'); div.className = 'recent-item'; div.onclick = () => loadRecent(i);
+    const txt = document.createElement('span'); txt.className = 'recent-item-text';
+    // 안전한 label만 표시, 레거시 데이터의 input/prompt는 무시
+    txt.textContent = item.label || item.resultMode || '프롬프트';
+    div.appendChild(txt);
+    const time = document.createElement('span'); time.className = 'recent-item-time'; time.textContent = getTimeAgo(item.time);
+    div.appendChild(time); c.appendChild(div);
+  });
+}
+function clearRecent() { localStorage.removeItem(STORAGE_KEYS.recent); renderRecent(); showToast('최근 기록을 삭제했습니다'); }
+function loadRecent(idx) {
+  const r = safeJsonParse(localStorage.getItem(STORAGE_KEYS.recent), []);
+  if (!r[idx]) return;
+  // 개인정보 보호: 원문을 복원하지 않고 홈으로 이동 + 빈 입력창 + 포커스 + 토스트
+  goHome();
+  const mainInput = document.getElementById('main-input');
+  if (mainInput) { mainInput.value = ''; setTimeout(() => mainInput.focus(), 100); }
+  showToast('개인정보 보호를 위해 요청 원문은 저장하지 않습니다. 요청을 다시 입력해주세요.');
+}
 function getTimeAgo(ts){const d=Date.now()-ts;const m=Math.floor(d/60000);if(m<1)return'방금 전';if(m<60)return`${m}분 전`;const h=Math.floor(m/60);if(h<24)return`${h}시간 전`;return`${Math.floor(h/24)}일 전`;}
-// ===== 즐겨찾기 (localStorage) =====
-function toggleFavorite(){if(!currentPrompt)return;let favs=safeJsonParse(localStorage.getItem(STORAGE_KEYS.favorites),[]);const safePrompt=sanitizeForStorage(currentPrompt,currentResultMode);const exists=favs.findIndex(f=>f.prompt===safePrompt);if(exists>=0){favs.splice(exists,1);document.getElementById('fav-btn').classList.remove('active');showToast('즐겨찾기에서 제거했습니다');}else{const safeInput=getSafeInputLabel(currentResultMode)||sanitizeForStorage(currentInput,'input');favs.unshift({input:safeInput,prompt:safePrompt,resultMode:currentResultMode,time:Date.now()});document.getElementById('fav-btn').classList.add('active');showToast('⭐ 즐겨찾기에 저장했습니다');}localStorage.setItem(STORAGE_KEYS.favorites,JSON.stringify(favs));}
-function checkFavoriteStatus(){const favs=safeJsonParse(localStorage.getItem(STORAGE_KEYS.favorites),[]);const btn=document.getElementById('fav-btn');if(!btn)return;const safePrompt=sanitizeForStorage(currentPrompt,currentResultMode);if(favs.some(f=>f.prompt===safePrompt))btn.classList.add('active');else btn.classList.remove('active');}
-function renderFavorites(){const favs=safeJsonParse(localStorage.getItem(STORAGE_KEYS.favorites),[]);const list=document.getElementById('favorites-list');const empty=document.getElementById('favorites-empty');if(favs.length===0){list.innerHTML='';empty.style.display='block';return;}empty.style.display='none';list.innerHTML='';favs.forEach((f,i)=>{const card=document.createElement('div');card.className='fav-card';const prompt=document.createElement('div');prompt.className='fav-card-prompt';prompt.textContent=f.prompt||'';card.appendChild(prompt);const actions=document.createElement('div');actions.className='fav-card-actions';const useBtn=document.createElement('button');useBtn.className='btn-primary';useBtn.textContent='사용하기';useBtn.onclick=()=>useFavorite(i);actions.appendChild(useBtn);const delBtn=document.createElement('button');delBtn.className='btn-secondary';delBtn.textContent='삭제';delBtn.onclick=()=>removeFavorite(i);actions.appendChild(delBtn);card.appendChild(actions);list.appendChild(card);});}
-function useFavorite(idx){const favs=safeJsonParse(localStorage.getItem(STORAGE_KEYS.favorites),[]);if(!favs[idx])return;currentPrompt=favs[idx].prompt;currentInput=favs[idx].input||'';setResultMode(favs[idx].resultMode||'GENERAL');document.getElementById('result-intent').innerHTML='<strong>즐겨찾기에서 불러옴</strong>';document.getElementById('result-prompt').value=currentPrompt;let tip='';if(favs[idx].resultMode&&favs[idx].resultMode!=='GENERAL'){tip='⚠️ 개인정보 보호를 위해 관찰자료와 문체 예시문은 저장되지 않았습니다. 사용 전에 필요한 자료를 다시 입력해주세요.';}document.getElementById('result-tip').innerHTML=tip;showSection('result');checkFavoriteStatus();}
-function removeFavorite(idx){let favs=safeJsonParse(localStorage.getItem(STORAGE_KEYS.favorites),[]);favs.splice(idx,1);localStorage.setItem(STORAGE_KEYS.favorites,JSON.stringify(favs));renderFavorites();showToast('삭제했습니다');}
+// ===== 즐겨찾기 (localStorage) — 개인정보 제거 후 저장 =====
+function toggleFavorite() {
+  if (!currentPrompt) return;
+  let favs = safeJsonParse(localStorage.getItem(STORAGE_KEYS.favorites), []);
+  // 기존 즐겨찾기에 동일 항목이 있는지 확인 (sanitized prompt 기준)
+  const testPrompt = sanitizePromptForPersistentStorage(currentPrompt, currentResultMode, currentInput);
+  if (testPrompt === null) {
+    // 개인정보가 남아 있어 저장 불가
+    showToast('개인정보 보호를 위해 이 프롬프트는 즐겨찾기에 저장하지 못했습니다. 복사해서 보관해주세요.');
+    return;
+  }
+  const exists = favs.findIndex(f => f.prompt === testPrompt);
+  if (exists >= 0) {
+    favs.splice(exists, 1);
+    document.getElementById('fav-btn').classList.remove('active');
+    showToast('즐겨찾기에서 제거했습니다');
+  } else {
+    const entry = createSafeFavoriteEntry(currentResultMode, currentInput, currentPrompt, !!(getMainAttachmentOptions && getMainAttachmentOptions()?.enabled));
+    if (!entry) {
+      showToast('개인정보 보호를 위해 이 프롬프트는 즐겨찾기에 저장하지 못했습니다. 복사해서 보관해주세요.');
+      return;
+    }
+    favs.unshift(entry);
+    document.getElementById('fav-btn').classList.add('active');
+    showToast('⭐ 즐겨찾기에 저장했습니다');
+  }
+  localStorage.setItem(STORAGE_KEYS.favorites, JSON.stringify(favs));
+}
+function checkFavoriteStatus() {
+  const favs = safeJsonParse(localStorage.getItem(STORAGE_KEYS.favorites), []);
+  const btn = document.getElementById('fav-btn');
+  if (!btn) return;
+  const testPrompt = sanitizePromptForPersistentStorage(currentPrompt, currentResultMode, currentInput);
+  if (testPrompt && favs.some(f => f.prompt === testPrompt)) btn.classList.add('active');
+  else btn.classList.remove('active');
+}
+function renderFavorites() {
+  const favs = safeJsonParse(localStorage.getItem(STORAGE_KEYS.favorites), []);
+  const list = document.getElementById('favorites-list');
+  const empty = document.getElementById('favorites-empty');
+  if (favs.length === 0) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none'; list.innerHTML = '';
+  favs.forEach((f, i) => {
+    const card = document.createElement('div'); card.className = 'fav-card';
+    const prompt = document.createElement('div'); prompt.className = 'fav-card-prompt';
+    prompt.textContent = f.prompt || '';
+    card.appendChild(prompt);
+    const actions = document.createElement('div'); actions.className = 'fav-card-actions';
+    const useBtn = document.createElement('button'); useBtn.className = 'btn-primary'; useBtn.textContent = '사용하기'; useBtn.onclick = () => useFavorite(i);
+    actions.appendChild(useBtn);
+    const delBtn = document.createElement('button'); delBtn.className = 'btn-secondary'; delBtn.textContent = '삭제'; delBtn.onclick = () => removeFavorite(i);
+    actions.appendChild(delBtn); card.appendChild(actions); list.appendChild(card);
+  });
+}
+function useFavorite(idx) {
+  const favs = safeJsonParse(localStorage.getItem(STORAGE_KEYS.favorites), []);
+  if (!favs[idx]) return;
+  currentPrompt = favs[idx].prompt || '';
+  currentInput = favs[idx].input || '';
+  setResultMode(favs[idx].resultMode || 'GENERAL');
+  document.getElementById('result-intent').innerHTML = '<strong>즐겨찾기에서 불러옴</strong>';
+  document.getElementById('result-prompt').value = currentPrompt;
+  let tip = '';
+  if (favs[idx].resultMode && favs[idx].resultMode !== 'GENERAL') {
+    tip = '⚠️ 개인정보 보호를 위해 관찰자료와 문체 예시문은 저장되지 않았습니다. 사용 전에 필요한 자료를 다시 입력해주세요.';
+  }
+  // 자리표시자 검사
+  const placeholders = extractEditablePlaceholders(currentPrompt);
+  if (placeholders.length > 0) {
+    tip += (tip ? '<br>' : '') + `📝 수정할 부분이 ${placeholders.length}개 있습니다: ${placeholders.map(p => '{{' + p + '}}').join(', ')}`;
+  }
+  document.getElementById('result-tip').innerHTML = tip;
+  showSection('result');
+  checkFavoriteStatus();
+}
+function removeFavorite(idx) {
+  let favs = safeJsonParse(localStorage.getItem(STORAGE_KEYS.favorites), []);
+  favs.splice(idx, 1);
+  localStorage.setItem(STORAGE_KEYS.favorites, JSON.stringify(favs));
+  renderFavorites();
+  showToast('삭제했습니다');
+}
 
 // ===== 다크모드 =====
 function toggleDarkMode(){document.body.classList.toggle('dark');const isDark=document.body.classList.contains('dark');localStorage.setItem(STORAGE_KEYS.darkMode,isDark?'1':'0');document.getElementById('darkmode-icon').className=isDark?'ri-sun-line':'ri-moon-line';}
