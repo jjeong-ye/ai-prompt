@@ -1221,6 +1221,82 @@ const SCHOOL_RECORD_PROFILE = {
   }
 };
 
+// ===== Stage 12: 통합 규칙 스키마 시스템 =====
+// 생기부 공식 기준을 구조화된 스키마로 통합 관리하기 위한 계층
+
+const SEVERITY = {INFO:'INFO', CAUTION:'CAUTION', REVISE:'REVISE', PROHIBITED:'PROHIBITED'};
+
+const RECORD_RULES_SCHEMA = [
+  {
+    id: "reading",
+    label: "독서활동",
+    sourceLevel: "national",
+    schoolLevel: "중학교",
+    recordSection: "독서활동상황",
+    neisField: "독서활동상황",
+    purpose: "학기별로 학생이 읽은 책의 제목과 저자를 도서명(저자) 형식으로 기록",
+    owner: "교과담당교사 또는 학급담임교사",
+    maxChars: 500,
+    maxBytes: 1500,
+    perSubjectMaxChars: 250,
+    perSubjectMaxBytes: 750,
+    contentElements: ["도서명", "저자"],
+    evidenceRequirements: ["증빙자료 확인(독서기록장·독서 포트폴리오·독서로 등)", "ISBN 등재 도서"],
+    prohibitedContent: ["독후감 서술", "독서 태도 평가", "성장 서사", "독서량 비교"],
+    exceptions: ["특기할 만한 사항이 있는 학생에 대해 학기 단위로 입력"],
+    severity: "CAUTION",
+    source: { document: "2026학년도 학교생활기록부 기재요령(중학교)", publisher: "교육부", date: "2026-02-19", effectiveDate: "2026-03-01", page: "162쪽", verifiedDate: "2026-07-12" }
+  }
+];
+
+const SCHOOL_OVERRIDES = [
+  { item: "독서활동", field: "commonMaxChars", national: 500, school: 250, stricter: true, source: "본교 자체 연수자료 (2026.6.15)", display: "독서 공통: 국가 500자 → 학교 250자" },
+  { item: "독서활동", field: "perSubjectMaxChars", national: 250, school: 120, stricter: true, source: "본교 자체 연수자료 (2026.6.15)", display: "독서 과목별: 국가 250자 → 학교 120자(1학기)" },
+  { item: "자율·자치활동", field: "entriesPerSemester", national: null, school: 2, stricter: false, source: "본교 자체 연수자료 (2026.6.15)", display: "학기당 2개 입력 권장" },
+  { item: "진로활동", field: "entriesPerYear", national: null, school: "3~4", stricter: false, source: "본교 자체 연수자료 (2026.6.15)", display: "연간 3~4개 입력 권장" },
+  { item: "교과세특", field: "minimumStudents", national: null, school: 25, stricter: false, source: "본교 자체 연수자료 (2026.6.15)", display: "학년별 우수학생 25명 이상 입력" }
+];
+
+function createJudgmentResult(opts) {
+  return {
+    ruleId: opts.ruleId || '',
+    severity: opts.severity || SEVERITY.INFO,
+    expression: opts.expression || '',
+    reason: opts.reason || '',
+    source: opts.source || '',
+    alternative: opts.alternative || '',
+    teacherCheck: opts.teacherCheck || '',
+    sourceLevel: opts.sourceLevel || 'national'
+  };
+}
+
+function mapLegacySeverity(status) {
+  if (status === '불가') return SEVERITY.PROHIBITED;
+  if (status === '주의' || status === '조건부') return SEVERITY.CAUTION;
+  if (status === '일반화필요' || status === '한글대체') return SEVERITY.REVISE;
+  return SEVERITY.INFO;
+}
+
+const RECORD_REGRESSION_SENTENCES = [
+  { input: "학급회의에서 안건을 정리하고 발언 순서를 조율하며 회의 진행에 적극적으로 참여함.", item: "자율·자치활동", expected: { severity: null, pass: true }, desc: "정상 기록문" },
+  { input: "홍길동 학생은 2학년 3반에서 성실하게 생활함.", item: "행동특성 및 종합의견", expected: { severity: "CAUTION", reason: "개인정보" }, desc: "개인정보 포함" },
+  { input: "교외 영어경시대회에서 금상을 수상함.", item: "교과세특", expected: { severity: "PROHIBITED", reason: "교외실적+수상" }, desc: "교외활동·수상" },
+  { input: "매우 뛰어난 리더십을 발휘하며 반에서 가장 우수한 학생임.", item: "자율·자치활동", expected: { severity: "CAUTION", reason: "과장+비교" }, desc: "과장·비교·서열" },
+  { input: "여학생답게 꼼꼼하고 섬세한 태도를 보임.", item: "행동특성 및 종합의견", expected: { severity: "CAUTION", reason: "성별편향" }, desc: "성별 편향" },
+  { input: "학원에서 배운 내용을 수업에서 발표함.", item: "교과세특", expected: { severity: "CAUTION", reason: "사교육" }, desc: "사교육 표현" },
+  { input: "성실하게 노력하여 큰 성장을 이룸.", item: "진로활동", expected: { severity: "CAUTION", reason: "근거없는성장" }, desc: "근거 없는 성장" },
+  { input: "『나미야 잡화점의 기적』(히가시노 게이고)", item: "독서활동", expected: { severity: null, pass: true }, desc: "독서활동 정상 형식" },
+  { input: "『나미야 잡화점의 기적』을 읽고 삶의 의미에 대해 깊이 성찰하며 성장함.", item: "독서활동", expected: { severity: "REVISE", reason: "독서활동에부적절한서술" }, desc: "독서활동 잘못된 형식" },
+  { input: "학급회의에서 안건을 정리함.", item: "자율·자치활동", expected: { severity: null, pass: true, note: "학교기준: 학기당2개" }, desc: "학교 기준과 국가 기준 다른 경우" },
+  { input: "학급회의에서 안건을 정리하고 발언 순서를 조율하며 학급의 민주적 분위기를 형성하는 데 기여하고 서로의 의견을 경청하며 공동체 의식을 함양하는 모습을 보였으며 자기주도적으로 학급 규칙 제정에 앞장서 긍정적인 변화를 이끌어냄. 또한 교우들과의 원만한 관계 형성을 통해 학급 내 갈등을 중재하고 배려와 존중의 자세를 실천하는 모범을 보임.", item: "자율·자치활동", expected: { severity: "REVISE", reason: "글자수초과" }, desc: "글자 수 초과" }
+];
+
+function getSchemaEntry(type) {
+  return RECORD_RULES_SCHEMA.find(r => r.label === type) || null;
+}
+
+// ===== Stage 12 끝 =====
+
 // 생기부 항목 선택에 따라 우리 학교 자체 방침 안내문을 생성 (없으면 빈 문자열)
 function getSchoolPolicyNote(type) {
   const S = SCHOOL_RECORD_PROFILE;
@@ -2548,7 +2624,7 @@ function getNeisByte(str){let b=0;for(let i=0;i<str.length;i++){b+=str.charCodeA
 // --- 유틸: 텍스트 통계 ---
 function getTextStats(str){const chars=str.length;const noSpace=str.replace(/\s/g,'').length;const bytes=getNeisByte(str);const sentences=str.split(/[.!?]\s*/).filter(s=>s.trim()).length;return{chars,noSpace,bytes,sentences};}
 // --- 유틸: 항목별 컨텍스트 반환 ---
-function getRecordContext(type){return itemContext[type]||{purpose:'생기부 항목',maxChars:500,maxBytes:1500,endingType:'명사형',group:'기타',neisField:'',owner:'담당교사',keyElements:[]};}
+function getRecordContext(type){const schema=getSchemaEntry(type);if(schema){return{purpose:schema.purpose,maxChars:schema.maxChars,maxBytes:schema.maxBytes,endingType:"명사형",group:schema.recordSection==="독서활동상황"?"독서":"기타",neisField:schema.neisField,owner:schema.owner,keyElements:schema.contentElements};}return itemContext[type]||{purpose:'생기부 항목',maxChars:500,maxBytes:1500,endingType:'명사형',group:'기타',neisField:'',owner:'담당교사',keyElements:[]};}
 // --- 셀렉트 박스들에 항목 채우기 ---
 const visibleRecordSelectItems=["자율·자치/자율활동","진로활동","동아리활동","교과세특","교과세특(체육·예술)","행동특성 및 종합의견","자유학기활동"];
 function populateRecordSelects(){const selIds=["traffic-item-select","cpr-item-select","final-check-item","bias-check-item"];selIds.forEach(id=>{const sel=document.getElementById(id);if(!sel)return;sel.innerHTML="";visibleRecordSelectItems.forEach(item=>{const opt=document.createElement("option");opt.value=item;opt.textContent=item;sel.appendChild(opt);});});}
