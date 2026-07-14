@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -759,9 +759,9 @@ body.dark .result-prompt-box,body.dark .refine-section,body.dark .safety-block,b
 <p style="font-size:0.85rem;font-weight:600;margin-bottom:8px;"><i class="ri-file-excel-line"></i> 파일 일괄 검사</p>
 <div class="file-drop-zone" style="padding:20px;" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleTrafficFileDrop(event)">
 <i class="ri-upload-cloud-line" style="font-size:1.8rem;"></i>
-<p style="font-size:0.85rem;">엑셀(.xlsx)·CSV·TSV·텍스트 파일을 끌어다 놓거나</p>
-<label class="file-select-btn file-select-btn-sm" >파일 선택<input type="file" id="traffic-file-input" accept=".xlsx,.xls,.csv,.tsv,.txt" onchange="handleTrafficFileSelect(event)" class="file-input-hidden"></label>
-<p class="file-hint">xlsx, xls, csv, tsv, txt 파일 지원</p>
+<p style="font-size:0.85rem;">엑셀(.xlsx)·CSV·TSV·텍스트·PDF 파일을 끌어다 놓거나</p>
+<label class="file-select-btn file-select-btn-sm" >파일 선택<input type="file" id="traffic-file-input" accept=".xlsx,.xls,.csv,.tsv,.txt,.pdf" onchange="handleTrafficFileSelect(event)" class="file-input-hidden"></label>
+<p class="file-hint">xlsx, xls, csv, tsv, txt, pdf 지원 · PDF는 텍스트가 선택되는 검색 가능 PDF 권장(스캔본은 OCR 필요)</p>
 </div>
 </div>
 <div id="traffic-file-column-panel" class="hidden" style="margin-top:12px;padding:12px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius-sm);">
@@ -786,8 +786,6 @@ body.dark .result-prompt-box,body.dark .refine-section,body.dark .safety-block,b
 <button id="traffic-unified-run-btn" class="btn-primary" onclick="runTrafficIntegratedCheck()"><i class="ri-shield-check-line"></i> AI 정밀검토 프롬프트 만들기</button>
 </div>
 <div id="traffic-result" class="traffic-result hidden"></div>
-<div id="traffic-file-result" class="hidden u-mt-12" ></div>
-<div id="traffic-file-row-result" class="hidden" style="margin-top:12px;overflow-x:auto;"></div>
 <div id="traffic-unified-prompt-result" class="hidden u-mt-12" ></div>
 </div>
 <!-- 🫀 문장 CPR -->
@@ -945,8 +943,21 @@ body.dark .result-prompt-box,body.dark .refine-section,body.dark .safety-block,b
 </div>
 <!-- 토스트 -->
 <div id="toast" class="toast hidden"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" onerror="window._pdfjsLoadFailed=true;"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" onerror="window._xlsxLoadFailed=true;"></script>
 <script>
+// ===== PDF.js 초기화 및 실패 대응 =====
+if(!window._pdfjsLoadFailed && window.pdfjsLib){
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}else{
+  window._pdfjsLoadFailed=true;
+  document.addEventListener('DOMContentLoaded',function(){
+    const input=document.getElementById('traffic-file-input');
+    const hint=input&&input.closest('.file-drop-zone')?input.closest('.file-drop-zone').querySelector('.file-hint'):null;
+    if(hint&&hint.textContent.includes('pdf'))hint.innerHTML='xlsx, xls, csv, tsv, txt 지원 · ⚠️ PDF 처리 라이브러리를 불러오지 못해 현재 PDF 입력은 사용할 수 없습니다.';
+  });
+}
+
 // ===== 외부 의존성 실패 대응 =====
 if(window._xlsxLoadFailed||typeof XLSX==='undefined'){
   window._xlsxLoadFailed=true;
@@ -956,7 +967,7 @@ if(window._xlsxLoadFailed||typeof XLSX==='undefined'){
     const zones=document.querySelectorAll('.file-drop-zone');
     zones.forEach(function(z){
       const hint=z.querySelector('.file-hint');
-      if(hint&&hint.textContent.includes('xlsx'))hint.innerHTML='⚠️ 엑셀 라이브러리 로딩 실패. CSV·TSV·TXT 파일만 사용 가능합니다. 엑셀 파일은 CSV로 변환 후 업로드하세요.';
+      if(hint&&hint.textContent.includes('xlsx'))hint.innerHTML='⚠️ 엑셀 라이브러리 로딩 실패. CSV·TSV·TXT와 텍스트 PDF만 사용할 수 있습니다. 엑셀 파일은 CSV로 변환 후 업로드하세요.';
     });
   });
 }
@@ -964,7 +975,7 @@ if(window._xlsxLoadFailed||typeof XLSX==='undefined'){
 const APP_META = {
   version: "3.1",
   createdDate: "2026.07.08",
-  updatedDate: "2026.07.12"
+  updatedDate: "2026.07.13"
 };
 
 // ===== 저장 코드 구조 =====
@@ -1253,7 +1264,7 @@ const RECORD_POLICY_META = {
   decreeNumber: "교육부훈령 제555호",
   decreeDate: "2026-02-12",
   effectiveDate: "2026-03-01",
-  verifiedDate: "2026-07-12",
+  verifiedDate: "2026-07-13",
   verifiedSource: "교육부 학교생활기록부 종합지원포털"
 };
 
@@ -1302,13 +1313,13 @@ function createJudgmentResult(o){return{ruleId:o.ruleId||'',severity:o.severity|
 const RECORD_RULE_ALIASES={"자율활동":"자율·자치활동","자치·적응활동":"자율·자치활동"};
 // ===== 출처 레지스트리 =====
 const RECORD_SOURCE_REGISTRY = {
-  middleGuide2026: {document:"2026학년도 학교생활기록부 기재요령(중학교)",publisher:"교육부",date:"2026-02-19",effectiveDate:"2026-03-01",verifiedDate:"2026-07-12"},
-  decree555: {document:"학교생활기록 작성 및 관리지침(교육부훈령 제555호)",publisher:"교육부",date:"2026-02-12",effectiveDate:"2026-03-01",verifiedDate:"2026-07-12"},
+  middleGuide2026: {document:"2026학년도 학교생활기록부 기재요령(중학교)",publisher:"교육부",date:"2026-02-19",effectiveDate:"2026-03-01",verifiedDate:"2026-07-13"},
+  decree555: {document:"학교생활기록 작성 및 관리지침(교육부훈령 제555호)",publisher:"교육부",date:"2026-02-12",effectiveDate:"2026-03-01",verifiedDate:"2026-07-13"},
   schoolPolicy2026: {document:"본교 학교생활기록부 작성 연수자료",publisher:"본교",date:"2026-06-15",effectiveDate:"2026-06-15",verifiedDate:"2026-07-12"},
-  amendmentNotice2026: {document:"2026 학교생활기록부 훈령 및 기재요령 주요 개정사항 안내(중학교)",publisher:"교육부",date:"2026-02-19",effectiveDate:"2026-03-01",verifiedDate:"2026-07-12"}
+  amendmentNotice2026: {document:"2026 학교생활기록부 훈령 및 기재요령 주요 개정사항 안내(중학교)",publisher:"교육부",date:"2026-02-19",effectiveDate:"2026-03-01",verifiedDate:"2026-07-13"}
 };
 
-const RECORD_RULES_SCHEMA = [{id:"autonomy",label:"자율·자치활동",sourceLevel:"national",schoolLevel:"중학교",recordSection:"창의적 체험활동",neisField:"창의적 체험활동상황-자율·자치활동",purpose:"학급회의·자치활동·학교행사 등에서 보인 자율성과 참여 태도를 기록",owner:"학급담임교사",maxChars:500,maxBytes:1500,contentElements:["참여 태도","자치활동","협력","공동체 의식"],evidenceRequirements:["교사 직접 관찰"],prohibitedContent:["교외 활동","사교육","봉사시간 숫자","다른 학생과 비교"],exceptions:["임원 재임 기간은 날짜 형식 허용"],severity:"CAUTION",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"자율·자치활동 특기사항 500자/1500Byte"}]},{id:"career",label:"진로활동",sourceLevel:"national",schoolLevel:"중학교",recordSection:"창의적 체험활동",neisField:"창의적 체험활동상황-진로활동",purpose:"진로 탐색 과정에서 보인 관심 분야의 확장과 탐구 활동을 기록",owner:"학급담임교사",maxChars:500,maxBytes:1500,contentElements:["진로 탐색","직업 이해","자기 이해","진로 설계"],evidenceRequirements:["교사 직접 관찰"],prohibitedContent:["특정 대학명","사교육 프로그램","교외 진로캠프","부모 직업 언급"],exceptions:["학교 주관 진로체험은 기관명 사용 가능"],severity:"CAUTION",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"진로활동 특기사항 500자/1500Byte"}]},{id:"club",label:"동아리활동",sourceLevel:"national",schoolLevel:"중학교",recordSection:"창의적 체험활동",neisField:"창의적 체험활동상황-동아리활동",purpose:"동아리 활동 참여와 그 안에서의 역할·협력을 기록",owner:"해당 동아리 담당교사",maxChars:500,maxBytes:1500,contentElements:["참여도","역할 수행","협동심","활동 내용"],evidenceRequirements:["교사 직접 관찰"],prohibitedContent:["외부 동아리","사설 클럽","대회 수상","교외 활동 실적"],exceptions:["학교스포츠클럽 기재 가능","자율동아리 학년당 1개, 소개 30자 이내"],severity:"CAUTION",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"동아리활동 특기사항 500자/1500Byte"}]},{id:"volunteer",label:"봉사활동",sourceLevel:"national",schoolLevel:"중학교",recordSection:"창의적 체험활동",neisField:"창의적 체험활동상황-봉사활동실적",purpose:"봉사활동 실적표의 활동내용 한 줄을 기록",owner:"학급담임교사",maxChars:50,maxBytes:150,contentElements:["활동 내용 요약"],evidenceRequirements:["실적 증빙"],prohibitedContent:["학교 교육계획 외 사적 봉사"],exceptions:[],severity:"INFO",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"봉사활동 실적 활동내용 50자/150Byte"}]},{id:"subject",label:"교과세특",sourceLevel:"national",schoolLevel:"중학교",recordSection:"교과학습발달상황",neisField:"교과학습발달상황-세부능력 및 특기사항",purpose:"교과 수업에서의 학습 과정, 참여도, 성취 수준의 특성을 기록",owner:"교과담당교사",maxChars:500,maxBytes:1500,contentElements:["수업 참여","탐구 능력","성취수준 특성","학습 태도"],evidenceRequirements:["교사 직접 관찰","수업 산출물"],prohibitedContent:["성적·등급·석차","다른 학생과 비교","사교육","교외 대회","K-MOOC·MOOC·KOCW","방과후학교","소논문"],exceptions:[],severity:"CAUTION",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"교과세특 특기사항 500자/1500Byte"}]},{id:"subject-pe-art",label:"교과세특(체육·예술)",sourceLevel:"national",schoolLevel:"중학교",recordSection:"교과학습발달상황",neisField:"교과학습발달상황-세부능력 및 특기사항",purpose:"체육·음악·미술 교과의 실기 수행 과정과 참여 태도를 기록",owner:"교과담당교사",maxChars:500,maxBytes:1500,contentElements:["실기 능력","표현 과정","감상 능력","참여 태도"],evidenceRequirements:["교사 직접 관찰"],prohibitedContent:["경기 승패·순위","외부 대회·수상","학원·레슨 경력"],exceptions:["PAPS 1등급은 체육에서 허용 가능"],severity:"CAUTION",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"교과세특(체육·예술) 특기사항 500자/1500Byte"}]},{id:"growth",label:"개인별 성장",sourceLevel:"national",schoolLevel:"중학교",recordSection:"교과학습발달상황",neisField:"교과학습발달상황-개인별 성장 및 발달 특이사항",purpose:"한 학기 동안의 학습 성장 과정과 변화를 종합적으로 기록",owner:"학급담임교사",maxChars:500,maxBytes:1500,contentElements:["성장 과정","변화","노력","자기주도성"],evidenceRequirements:["교사 직접 관찰"],prohibitedContent:["다른 학생과 비교","근거 없는 성장"],exceptions:[],severity:"CAUTION",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"개인별 성장 및 발달 특이사항 500자/1500Byte"}]},{id:"behavior",label:"행동특성 및 종합의견",sourceLevel:"national",schoolLevel:"중학교",recordSection:"행동특성 및 종합의견",neisField:"행동특성 및 종합의견",purpose:"학년 동안 담임이 지속 관찰한 행동 특성과 인성적 성장을 기록",owner:"학급담임교사",maxChars:300,maxBytes:900,contentElements:["인성","대인관계","자기관리","행동 변화"],evidenceRequirements:["교사 지속 관찰","누가기록"],prohibitedContent:["가정환경","부모 직업","경제적 배경","의료 진단명","방과후학교"],exceptions:[],severity:"CAUTION",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"행동특성 및 종합의견 300자/900Byte"}]},{id:"attendance",label:"출결 특이사항",sourceLevel:"national",schoolLevel:"중학교",recordSection:"출결상황",neisField:"출결상황-특기사항",purpose:"출결 관련 특이사항을 기록",owner:"학급담임교사",maxChars:500,maxBytes:1500,contentElements:["출결 사유","성실성"],evidenceRequirements:["출결 기록"],prohibitedContent:[],exceptions:[],severity:"INFO",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"출결 특기사항 500자/1500Byte"}]},{id:"reading",label:"독서활동",sourceLevel:"national",schoolLevel:"중학교",recordSection:"독서활동상황",neisField:"독서활동상황",purpose:"학기별로 학생이 읽은 책의 제목과 저자를 도서명(저자) 형식으로 기록",owner:"교과담당교사 또는 학급담임교사",maxChars:500,maxBytes:1500,perSubjectMaxChars:250,perSubjectMaxBytes:750,contentElements:["도서명","저자"],evidenceRequirements:["증빙자료 확인(독서기록장·독서 포트폴리오·독서로 등)","ISBN 등재 도서"],prohibitedContent:["독후감 서술","독서 태도 평가","성장 서사","독서량 비교"],exceptions:["특기할 만한 사항이 있는 학생에 대해 학기 단위로 입력"],severity:"CAUTION",sources:[{sourceId:"middleGuide2026",page:"162쪽",fact:"독서활동 공통 500자·1500Byte, 과목별 250자·750Byte"},{sourceId:"middleGuide2026",page:"113~114쪽",fact:"도서명(저자) 입력 형식, 입력 주체, 증빙자료와 ISBN 등재 기준"}]},{id:"free-semester",label:"자유학기활동",sourceLevel:"national",schoolLevel:"중학교",recordSection:"자유학기활동상황",neisField:"자유학기활동상황",purpose:"자유학기 활동을 기록",owner:"해당 활동별 담당교사",maxChars:1000,maxBytes:3000,contentElements:["적극적 참여","흥미 탐색","협력","자기주도성"],evidenceRequirements:["교사 직접 관찰"],prohibitedContent:["교외 활동","사교육"],exceptions:[],severity:"CAUTION",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"자유학기활동 특기사항 1000자/3000Byte"}]},{id:"free-career",label:"자유학기 진로탐색활동",sourceLevel:"national",schoolLevel:"중학교",recordSection:"자유학기활동상황",neisField:"자유학기활동상황-진로탐색활동",purpose:"자유학기 진로탐색활동의 참여도와 흥미도를 기록",owner:"해당 활동별 담당교사",maxChars:1000,maxBytes:3000,contentElements:["활동 과정","참여도","흥미도"],evidenceRequirements:["교사 직접 관찰"],prohibitedContent:["특정 대학명","사교육","부모 직업"],exceptions:["학교 주관 진로체험은 기관명 사용 가능"],severity:"CAUTION",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"자유학기 진로탐색활동 특기사항 1000자/3000Byte"}]},{id:"free-topic",label:"자유학기 주제선택활동",sourceLevel:"national",schoolLevel:"중학교",recordSection:"자유학기활동상황",neisField:"자유학기활동상황-주제선택활동",purpose:"자유학기 주제선택활동의 탐구 과정을 기록",owner:"해당 활동별 담당교사",maxChars:1000,maxBytes:3000,contentElements:["탐구 과정","참여도","태도 변화"],evidenceRequirements:["교사 직접 관찰"],prohibitedContent:["교외 활동","사교육"],exceptions:[],severity:"CAUTION",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"자유학기 주제선택활동 특기사항 1000자/3000Byte"}]},{id:"free-art-pe",label:"자유학기 예술·체육활동",sourceLevel:"national",schoolLevel:"중학교",recordSection:"자유학기활동상황",neisField:"자유학기활동상황-예술·체육활동",purpose:"자유학기 예술·체육활동의 표현 과정을 기록",owner:"해당 활동별 담당교사",maxChars:1000,maxBytes:3000,contentElements:["표현 과정","참여도","협력 태도"],evidenceRequirements:["교사 직접 관찰"],prohibitedContent:["외부 대회·수상","학원 경력"],exceptions:[],severity:"CAUTION",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"자유학기 예술·체육활동 특기사항 1000자/3000Byte"}]},{id:"free-club",label:"자유학기 동아리활동",sourceLevel:"national",schoolLevel:"중학교",recordSection:"자유학기활동상황",neisField:"자유학기활동상황-동아리활동",purpose:"자유학기 동아리활동의 역할 수행을 기록",owner:"해당 활동별 담당교사",maxChars:1000,maxBytes:3000,contentElements:["활동 내용","참여도","역할 수행"],evidenceRequirements:["교사 직접 관찰"],prohibitedContent:["외부 동아리","대회 수상"],exceptions:[],severity:"CAUTION",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"자유학기 동아리활동 특기사항 1000자/3000Byte"}]},{id:"award",label:"수상경력",group:"특수",sourceLevel:"national",schoolLevel:"중학교",recordSection:"수상경력",neisField:"수상경력",purpose:"교내 수상을 기재",owner:"담당교사",maxChars:0,maxBytes:0,contentElements:["수상명","등급","참가대상"],evidenceRequirements:["교내상만"],prohibitedContent:["교외상"],exceptions:[],severity:"INFO",sources:[{sourceId:"decree555",page:"제9조",fact:"교내상만 입력, 동일 실적 최상위 수상만 기재",verifiedDate:"2026-07-12"}]},{id:"certification",label:"자격증·인증",group:"특수",sourceLevel:"national",schoolLevel:"중학교",recordSection:"자격증 및 인증취득상황",neisField:"자격증 및 인증취득상황",purpose:"자격증 취득 상황을 기재",owner:"담당교사",maxChars:0,maxBytes:0,contentElements:["자격증명","취득일","발급기관"],evidenceRequirements:["증빙 서류"],prohibitedContent:[],exceptions:[],severity:"INFO",sources:[{sourceId:"decree555",page:"제10조",fact:"국가기술자격법에 의한 자격증 및 국가공인 민간자격증 기재",verifiedDate:"2026-07-12"}]},{id:"gifted",label:"영재·발명교육",group:"특수",sourceLevel:"national",schoolLevel:"중학교",recordSection:"교과학습발달상황",neisField:"교과학습발달상황-비고",purpose:"영재교육원·발명교육 이수 실적을 기록",owner:"담당교사",maxChars:500,maxBytes:1500,contentElements:["이수 기간","교육 내용","성취 수준"],evidenceRequirements:["이수 증빙"],prohibitedContent:["사설 영재원"],exceptions:["학교장 추천 영재교육원만 기재 가능"],severity:"CAUTION",sources:[{sourceId:"decree555",page:"제15조 제6항",fact:"영재교육진흥법에 의한 영재교육기관 이수 내용 기재",verifiedDate:"2026-07-12"}]},{id:"academic",label:"학적사항 특기",group:"특수",sourceLevel:"national",schoolLevel:"중학교",recordSection:"인적·학적사항",neisField:"인적·학적사항-특기사항",purpose:"전출입, 유예, 면제 등 학적 특기사항을 기록",owner:"담당교사",maxChars:500,maxBytes:1500,contentElements:["전출입","사유","기간"],evidenceRequirements:["학적 증빙 서류"],prohibitedContent:[],exceptions:[],severity:"INFO",sources:[{sourceId:"decree555",page:"제7조",fact:"학적변동 사항 기재 범위",verifiedDate:"2026-07-12"}]}];
+const RECORD_RULES_SCHEMA = [{id:"autonomy",label:"자율·자치활동",sourceLevel:"national",schoolLevel:"중학교",recordSection:"창의적 체험활동",neisField:"창의적 체험활동상황-자율·자치활동",purpose:"학급회의·자치활동·학교행사 등에서 보인 자율성과 참여 태도를 기록",owner:"학급담임교사",maxChars:500,maxBytes:1500,contentElements:["참여 태도","자치활동","협력","공동체 의식"],evidenceRequirements:["교사 직접 관찰"],prohibitedContent:["교외 활동","사교육","봉사시간 숫자","다른 학생과 비교"],exceptions:["임원 재임 기간은 날짜 형식 허용"],severity:"CAUTION",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"자율·자치활동 특기사항 500자/1500Byte"}]},{id:"career",label:"진로활동",sourceLevel:"national",schoolLevel:"중학교",recordSection:"창의적 체험활동",neisField:"창의적 체험활동상황-진로활동",purpose:"진로 탐색 과정에서 보인 관심 분야의 확장과 탐구 활동을 기록",owner:"학급담임교사",maxChars:500,maxBytes:1500,contentElements:["진로 탐색","직업 이해","자기 이해","진로 설계"],evidenceRequirements:["교사 직접 관찰"],prohibitedContent:["특정 대학명","사교육 프로그램","교외 진로캠프","부모 직업 언급"],exceptions:["학교 주관 진로체험은 기관명 사용 가능"],severity:"CAUTION",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"진로활동 특기사항 500자/1500Byte"}]},{id:"club",label:"동아리활동",sourceLevel:"national",schoolLevel:"중학교",recordSection:"창의적 체험활동",neisField:"창의적 체험활동상황-동아리활동",purpose:"동아리 활동 참여와 그 안에서의 역할·협력을 기록",owner:"해당 동아리 담당교사",maxChars:500,maxBytes:1500,contentElements:["참여도","역할 수행","협동심","활동 내용"],evidenceRequirements:["교사 직접 관찰"],prohibitedContent:["외부 동아리","사설 클럽","대회 수상","교외 활동 실적"],exceptions:["학교스포츠클럽 기재 가능","자율동아리 학년당 1개, 소개 30자 이내"],severity:"CAUTION",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"동아리활동 특기사항 500자/1500Byte"}]},{id:"volunteer",label:"봉사활동",sourceLevel:"national",schoolLevel:"중학교",recordSection:"창의적 체험활동",neisField:"창의적 체험활동상황-봉사활동실적",purpose:"봉사활동 실적표의 활동내용 한 줄을 기록",owner:"학급담임교사",maxChars:50,maxBytes:150,contentElements:["활동 내용 요약"],evidenceRequirements:["실적 증빙"],prohibitedContent:["학교 교육계획 외 사적 봉사"],exceptions:[],severity:"INFO",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"봉사활동 실적 활동내용 50자/150Byte"}]},{id:"subject",label:"교과세특",sourceLevel:"national",schoolLevel:"중학교",recordSection:"교과학습발달상황",neisField:"교과학습발달상황-세부능력 및 특기사항",purpose:"교과 수업에서의 학습 과정, 참여도, 성취 수준의 특성을 기록",owner:"교과담당교사",maxChars:500,maxBytes:1500,contentElements:["수업 참여","탐구 능력","성취수준 특성","학습 태도"],evidenceRequirements:["교사 직접 관찰","수업 산출물"],prohibitedContent:["성적·등급·석차","다른 학생과 비교","사교육","교외 대회","K-MOOC·MOOC·KOCW","방과후학교","소논문"],exceptions:[],severity:"CAUTION",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"교과세특 특기사항 500자/1500Byte"}]},{id:"subject-pe-art",label:"교과세특(체육·예술)",sourceLevel:"national",schoolLevel:"중학교",recordSection:"교과학습발달상황",neisField:"교과학습발달상황-세부능력 및 특기사항",purpose:"체육·음악·미술 교과의 실기 수행 과정과 참여 태도를 기록",owner:"교과담당교사",maxChars:500,maxBytes:1500,contentElements:["실기 능력","표현 과정","감상 능력","참여 태도"],evidenceRequirements:["교사 직접 관찰"],prohibitedContent:["경기 승패·순위","외부 대회·수상","학원·레슨 경력"],exceptions:["PAPS 1등급은 체육에서 허용 가능"],severity:"CAUTION",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"교과세특(체육·예술) 특기사항 500자/1500Byte"}]},{id:"growth",label:"개인별 성장",sourceLevel:"national",schoolLevel:"중학교",recordSection:"교과학습발달상황",neisField:"교과학습발달상황-개인별 성장 및 발달 특이사항",purpose:"한 학기 동안의 학습 성장 과정과 변화를 종합적으로 기록",owner:"학급담임교사",maxChars:500,maxBytes:1500,contentElements:["성장 과정","변화","노력","자기주도성"],evidenceRequirements:["교사 직접 관찰"],prohibitedContent:["다른 학생과 비교","근거 없는 성장"],exceptions:[],severity:"CAUTION",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"개인별 성장 및 발달 특이사항 500자/1500Byte"}]},{id:"behavior",label:"행동특성 및 종합의견",sourceLevel:"national",schoolLevel:"중학교",recordSection:"행동특성 및 종합의견",neisField:"행동특성 및 종합의견",purpose:"학년 동안 담임이 지속 관찰한 행동 특성과 인성적 성장을 기록",owner:"학급담임교사",maxChars:300,maxBytes:900,contentElements:["인성","대인관계","자기관리","행동 변화"],evidenceRequirements:["교사 지속 관찰","누가기록"],prohibitedContent:["가정환경","부모 직업","경제적 배경","의료 진단명","방과후학교"],exceptions:[],severity:"CAUTION",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"행동특성 및 종합의견 300자/900Byte"}]},{id:"attendance",label:"출결 특이사항",sourceLevel:"national",schoolLevel:"중학교",recordSection:"출결상황",neisField:"출결상황-특기사항",purpose:"출결 관련 특이사항을 기록",owner:"학급담임교사",maxChars:500,maxBytes:1500,contentElements:["출결 사유","성실성"],evidenceRequirements:["출결 기록"],prohibitedContent:[],exceptions:[],severity:"INFO",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"출결 특기사항 500자/1500Byte"}]},{id:"reading",label:"독서활동",sourceLevel:"national",schoolLevel:"중학교",recordSection:"독서활동상황",neisField:"독서활동상황",purpose:"학기별로 학생이 읽은 책의 제목과 저자를 도서명(저자) 형식으로 기록",owner:"교과담당교사 또는 학급담임교사",maxChars:500,maxBytes:1500,perSubjectMaxChars:250,perSubjectMaxBytes:750,contentElements:["도서명","저자"],evidenceRequirements:["증빙자료 확인(독서기록장·독서 포트폴리오·독서로 등)","ISBN 등재 도서"],prohibitedContent:["독후감 서술","독서 태도 평가","성장 서사","독서량 비교"],exceptions:["특기할 만한 사항이 있는 학생에 대해 학기 단위로 입력"],severity:"CAUTION",sources:[{sourceId:"middleGuide2026",page:"162쪽",fact:"독서활동 공통 500자·1500Byte, 과목별 250자·750Byte"},{sourceId:"middleGuide2026",page:"113~114쪽",fact:"도서명(저자) 입력 형식, 입력 주체, 증빙자료와 ISBN 등재 기준"}]},{id:"free-semester",label:"자유학기활동",sourceLevel:"national",schoolLevel:"중학교",recordSection:"자유학기활동상황",neisField:"자유학기활동상황",purpose:"자유학기 활동을 기록",owner:"해당 활동별 담당교사",maxChars:1000,maxBytes:3000,contentElements:["적극적 참여","흥미 탐색","협력","자기주도성"],evidenceRequirements:["교사 직접 관찰"],prohibitedContent:["교외 활동","사교육"],exceptions:[],severity:"CAUTION",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"자유학기활동 특기사항 1000자/3000Byte"}]},{id:"free-career",label:"자유학기 진로탐색활동",sourceLevel:"national",schoolLevel:"중학교",recordSection:"자유학기활동상황",neisField:"자유학기활동상황-진로탐색활동",purpose:"자유학기 진로탐색활동의 참여도와 흥미도를 기록",owner:"해당 활동별 담당교사",maxChars:1000,maxBytes:3000,contentElements:["활동 과정","참여도","흥미도"],evidenceRequirements:["교사 직접 관찰"],prohibitedContent:["특정 대학명","사교육","부모 직업"],exceptions:["학교 주관 진로체험은 기관명 사용 가능"],severity:"CAUTION",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"자유학기 진로탐색활동 특기사항 1000자/3000Byte"}]},{id:"free-topic",label:"자유학기 주제선택활동",sourceLevel:"national",schoolLevel:"중학교",recordSection:"자유학기활동상황",neisField:"자유학기활동상황-주제선택활동",purpose:"자유학기 주제선택활동의 탐구 과정을 기록",owner:"해당 활동별 담당교사",maxChars:1000,maxBytes:3000,contentElements:["탐구 과정","참여도","태도 변화"],evidenceRequirements:["교사 직접 관찰"],prohibitedContent:["교외 활동","사교육"],exceptions:[],severity:"CAUTION",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"자유학기 주제선택활동 특기사항 1000자/3000Byte"}]},{id:"free-art-pe",label:"자유학기 예술·체육활동",sourceLevel:"national",schoolLevel:"중학교",recordSection:"자유학기활동상황",neisField:"자유학기활동상황-예술·체육활동",purpose:"자유학기 예술·체육활동의 표현 과정을 기록",owner:"해당 활동별 담당교사",maxChars:1000,maxBytes:3000,contentElements:["표현 과정","참여도","협력 태도"],evidenceRequirements:["교사 직접 관찰"],prohibitedContent:["외부 대회·수상","학원 경력"],exceptions:[],severity:"CAUTION",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"자유학기 예술·체육활동 특기사항 1000자/3000Byte"}]},{id:"free-club",label:"자유학기 동아리활동",sourceLevel:"national",schoolLevel:"중학교",recordSection:"자유학기활동상황",neisField:"자유학기활동상황-동아리활동",purpose:"자유학기 동아리활동의 역할 수행을 기록",owner:"해당 활동별 담당교사",maxChars:1000,maxBytes:3000,contentElements:["활동 내용","참여도","역할 수행"],evidenceRequirements:["교사 직접 관찰"],prohibitedContent:["외부 동아리","대회 수상"],exceptions:[],severity:"CAUTION",sources:[{sourceId:"middleGuide2026",page:"기재요령 별표(입력항목 최대 글자 수)",fact:"자유학기 동아리활동 특기사항 1000자/3000Byte"}]},{id:"award",label:"수상경력",group:"특수",sourceLevel:"national",schoolLevel:"중학교",recordSection:"수상경력",neisField:"수상경력",purpose:"교내 수상을 기재",owner:"담당교사",maxChars:0,maxBytes:0,contentElements:["수상명","등급","참가대상"],evidenceRequirements:["교내상만"],prohibitedContent:["교외상"],exceptions:[],severity:"INFO",sources:[{sourceId:"decree555",page:"제9조",fact:"교내상만 입력, 동일 실적 최상위 수상만 기재",verifiedDate:"2026-07-13"}]},{id:"certification",label:"자격증·인증",group:"특수",sourceLevel:"national",schoolLevel:"중학교",recordSection:"자격증 및 인증취득상황",neisField:"자격증 및 인증취득상황",purpose:"자격증 취득 상황을 기재",owner:"담당교사",maxChars:0,maxBytes:0,contentElements:["자격증명","취득일","발급기관"],evidenceRequirements:["증빙 서류"],prohibitedContent:[],exceptions:[],severity:"INFO",sources:[{sourceId:"decree555",page:"제10조",fact:"국가기술자격법에 의한 자격증 및 국가공인 민간자격증 기재",verifiedDate:"2026-07-13"}]},{id:"gifted",label:"영재·발명교육",group:"특수",sourceLevel:"national",schoolLevel:"중학교",recordSection:"교과학습발달상황",neisField:"교과학습발달상황-비고",purpose:"영재교육원·발명교육 이수 실적을 기록",owner:"담당교사",maxChars:500,maxBytes:1500,contentElements:["이수 기간","교육 내용","성취 수준"],evidenceRequirements:["이수 증빙"],prohibitedContent:["사설 영재원"],exceptions:["학교장 추천 영재교육원만 기재 가능"],severity:"CAUTION",sources:[{sourceId:"decree555",page:"제15조 제6항",fact:"영재교육진흥법에 의한 영재교육기관 이수 내용 기재",verifiedDate:"2026-07-13"}]},{id:"academic",label:"학적사항 특기",group:"특수",sourceLevel:"national",schoolLevel:"중학교",recordSection:"인적·학적사항",neisField:"인적·학적사항-특기사항",purpose:"전출입, 유예, 면제 등 학적 특기사항을 기록",owner:"담당교사",maxChars:500,maxBytes:1500,contentElements:["전출입","사유","기간"],evidenceRequirements:["학적 증빙 서류"],prohibitedContent:[],exceptions:[],severity:"INFO",sources:[{sourceId:"decree555",page:"제7조",fact:"학적변동 사항 기재 범위",verifiedDate:"2026-07-13"}]}];
 
 const SCHOOL_OVERRIDES=[{item:"독서활동",field:"commonMaxChars",national:500,school:250,stricter:true,source:"본교 자체 연수자료 (2026.6.15)",display:"독서 공통: 국가 500자 → 학교 250자"},{item:"독서활동",field:"perSubjectMaxChars",national:250,school:120,stricter:true,source:"본교 자체 연수자료 (2026.6.15)",display:"독서 과목별: 국가 250자 → 학교 120자(1학기)"},{item:"자율·자치활동",field:"entriesPerSemester",national:null,school:2,stricter:false,source:"본교 자체 연수자료 (2026.6.15)",display:"학기당 2개 입력 권장"},{item:"자율·자치활동",field:"noDate",national:null,school:true,stricter:false,source:"본교 자체 연수자료 (2026.6.15)",display:"날짜는 작성하지 않되, 임원 재임 기간만 예외로 반드시 입력"},{item:"진로활동",field:"entriesPerYear",national:null,school:"3~4",stricter:false,source:"본교 자체 연수자료 (2026.6.15)",display:"연간 3~4개 입력 권장"},{item:"진로활동",field:"noDate",national:null,school:true,stricter:false,source:"본교 자체 연수자료 (2026.6.15)",display:"날짜는 작성하지 않음"},{item:"동아리활동",field:"noDate",national:null,school:true,stricter:false,source:"본교 자체 연수자료 (2026.6.15)",display:"날짜는 작성하지 않음"},{item:"동아리활동",field:"autonomousClubMinParticipation",national:null,school:80,stricter:false,source:"본교 자체 연수자료 (2026.6.15)",display:"자율동아리는 운영시간 80% 이상 참여한 학생만 입력(2학기)"},{item:"교과세특",field:"minimumStudents",national:null,school:25,stricter:false,source:"본교 자체 연수자료 (2026.6.15)",display:"학년별 우수학생 25명 이상 입력"},{item:"출결 특이사항",field:"reasonRequiredDays",national:null,school:7,stricter:false,source:"본교 자체 연수자료 (2026.6.15)",display:"질병·미인정 결석 연속 7일 이상인 경우에만 사유 작성"},{item:"행동특성 및 종합의견",field:"negativeRecordManagement",national:null,school:true,stricter:false,source:"본교 자체 연수자료 (2026.6.15)",display:"부정적 행동특성 기재 시 관련 누가기록을 교육정보시스템에 전산 관리"}];
 function resolveRuleLabel(type){return RECORD_RULE_ALIASES[type]||type;}
@@ -1513,12 +1524,18 @@ function evaluateTrafficSentence(text,item,options){
   if(!text||!text.trim())return[];
   var opts=options||getRecordEvaluationOptions(item);
   // 규칙 ID → 분류 매핑
-  var categoryMap={'compound-어학시험점수기재금지':'공인어학시험','compound-자격증취득기재금지':'자격증·인증','compound-대학명진학기재금지':'기관명·대학명','compound-교외수상기재금지':'교외 대회·수상','reading-prohibited-narrative':'독서활동 형식','privacy-name':'개인정보','pattern-과장표현':'과장표현','pattern-비교·서열화':'순위·비교','pattern-단정적 일반화':'과장표현','pattern-근거 없는 성장':'과장표현','pattern-성별 편향':'편향표현','pattern-사교육 언급':'사교육','pattern-점수 직접 노출':'순위·비교','pattern-등급 직접 노출':'순위·비교','pattern-석차·순위 노출':'순위·비교','pattern-연구보고서 기재 금지':'연구실적','pattern-가정환경·가족배경 암시':'편향표현','pattern-교사 미관찰 내면 단정':'관찰 근거','pattern-근거 없는 최상급':'과장표현'};
+  var categoryMap={'compound-어학시험점수기재금지':'공인어학시험','compound-자격증취득기재금지':'자격증·인증','compound-대학명진학기재금지':'기관명·대학명','compound-교외수상기재금지':'교외 대회·수상','reading-prohibited-narrative':'독서활동 형식','privacy-name':'개인정보','pattern-과장표현':'과장표현','pattern-비교·서열화':'순위·비교','pattern-단정적 일반화':'과장표현','pattern-근거 없는 성장':'과장표현','pattern-성별 편향':'편향표현','pattern-사교육 언급':'사교육','pattern-점수 직접 노출':'순위·비교','pattern-등급 직접 노출':'순위·비교','pattern-석차·순위 노출':'순위·비교','pattern-연구보고서 기재 금지':'연구실적','pattern-가정환경·가족배경 암시':'편향표현','pattern-교사 미관찰 내면 단정':'관찰 근거','pattern-근거 없는 최상급':'과장표현','context-explicit-external-activity':'외부 활동 신호'};
   function getCat(ruleId){return categoryMap[ruleId]||(ruleId.startsWith('forbidden-')?((forbiddenTerms[ruleId.substring(10)]||{}).category||'기재 기준'):'기재 기준');}
   // 1. detectTrafficTerms 결과 수집
   var trafficDetected=detectTrafficTerms(text,item);
   // 2. evaluateRecordText 결과 수집
   var evalResults=evaluateRecordText(text,item,opts);
+  // 명백한 외부 활동·전언 신호는 단어 하나가 아니라 문맥 결합으로만 후보화
+  var explicitExternalPattern=/(주말에\s*개인적으로|개인적으로\s*(참가|참여|수강|지원)|교외\s*(진로캠프|캠프|프로그램|동아리|강좌|활동)|외부\s*(진로캠프|캠프|프로그램|동아리|강좌|활동))/;
+  var explicitExternalMatch=text.match(explicitExternalPattern);
+  if(explicitExternalMatch&&!evalResults.some(function(j){return j.ruleId==='compound-교외수상기재금지';})){
+    evalResults.push(createJudgmentResult({ruleId:'context-explicit-external-activity',severity:SEVERITY.CAUTION,expression:explicitExternalMatch[0],reason:'원문에 학교 밖에서 개인적으로 수행한 활동으로 읽히는 명백한 신호가 있음',source:'문맥 기반 교사 확인 후보',alternative:'활동을 임의 삭제하거나 학교 활동으로 바꾸지 말고 기재 가능 여부와 사실관계 확인',teacherCheck:'원문에 명시된 외부 활동의 기재 가능 여부와 사실관계 확인',sourceLevel:'national'}));
+  }
   // 3. 두 결과를 공통 구조로 변환
   var unified=[];
   evalResults.forEach(function(j){unified.push({ruleId:j.ruleId,severity:j.severity,expressions:[j.expression],category:getCat(j.ruleId),reason:j.reason,alternative:j.alternative,teacherCheck:j.teacherCheck,sourceLevel:j.sourceLevel,basisType:j.sourceLevel==='school'?'학교 입력 권장':'공식 기재 기준',source:j.source});});
@@ -3133,7 +3150,7 @@ const forbiddenTerms = {
   "전교 1등":{category:"순위·비교",method:"패턴참고",status:"불가",reason:"석차·순위 표현은 서술형 항목에 절대 부적절",alt:"구체적 학습 행동과 성장 과정으로 서술"},
   "최우수":{category:"과장표현",method:"패턴참고",status:"주의",reason:"근거 없는 과장 표현, 구체성 부족",alt:"구체적 행동·성과로 서술"},
 };
-Object.assign(forbiddenTerms,{"대회":{category:"대회·수상",method:"패턴참고",status:"주의",reason:"교내·외 대회 참여 사실, 성적, 수상 실적은 서술형 항목에 입력할 수 없습니다.",alt:"대회명이 아닌 학교 교육활동 과정, 수업 참여, 탐구 과정 중심으로 바꾸세요."},"시상":{category:"대회·수상",method:"즉시",status:"불가",reason:"시상 관련 내용은 창체·세특·자유학기·행발에 입력할 수 없습니다.",alt:"시상 결과 대신 활동 과정과 역할을 작성하세요."},"입상":{category:"대회·수상",method:"즉시",status:"불가",reason:"입상 사실은 서술형 항목에 입력할 수 없습니다.",alt:"성과 표현을 삭제하고 관찰된 수행 과정으로 대체하세요."},"우수상":{category:"등위·수상",method:"즉시",status:"불가",reason:"수상명은 서술형 항목에 입력할 수 없습니다.",alt:"수상명 삭제 후 활동 과정 중심으로 작성하세요."},"장려상":{category:"등위·수상",method:"즉시",status:"불가",reason:"수상명은 서술형 항목에 입력할 수 없습니다.",alt:"수상명 삭제 후 활동 과정 중심으로 작성하세요."},"방과후학교":{category:"방과후학교",method:"즉시",status:"불가",reason:"방과후학교 활동은 행동특성 및 종합의견을 포함한 서술형 항목에 입력할 수 없습니다.",alt:"정규 교육활동에서 관찰된 내용으로 대체하세요."},"K-MOOC":{category:"온라인 공개강좌",method:"즉시",status:"불가",reason:"K-MOOC 관련 내용은 교과세특 등에 입력할 수 없습니다.",alt:"학교 수업 활동 중심으로 대체하세요."},"MOOC":{category:"온라인 공개강좌",method:"즉시",status:"불가",reason:"MOOC 관련 내용은 입력할 수 없습니다.",alt:"학교 수업 활동 중심으로 대체하세요."},"KOCW":{category:"온라인 공개강좌",method:"즉시",status:"불가",reason:"KOCW 관련 내용은 입력할 수 없습니다.",alt:"학교 수업 활동 중심으로 대체하세요."},"장학생":{category:"장학금",method:"즉시",status:"불가",reason:"장학생 관련 내용은 입력할 수 없습니다.",alt:"장학 관련 내용을 삭제하세요."},"장학금":{category:"장학금",method:"즉시",status:"불가",reason:"장학금 관련 내용은 입력할 수 없습니다.",alt:"장학 관련 내용을 삭제하세요."},"모의고사":{category:"성적",method:"즉시",status:"불가",reason:"모의고사 관련 성적 또는 실적은 입력할 수 없습니다.",alt:"수업 중 관찰된 학습 과정과 태도로 대체하세요."},"전국연합":{category:"성적",method:"즉시",status:"불가",reason:"전국연합학력평가 관련 내용은 입력할 수 없습니다.",alt:"정규 수업 활동에서 확인된 학습 태도로 대체하세요."},"석차":{category:"성적·서열",method:"즉시",status:"불가",reason:"석차·등위 표현은 서술형 항목에 입력할 수 없습니다.",alt:"비교 표현을 삭제하고 개별 성장 과정으로 작성하세요."},"부모":{category:"가족배경",method:"패턴참고",status:"주의",reason:"부모 또는 친인척의 사회·경제적 지위를 암시하는 내용은 입력할 수 없습니다.",alt:"학생의 학교생활에서 관찰된 행동으로 대체하세요."},"아버지":{category:"가족배경",method:"패턴참고",status:"주의",reason:"가족 배경을 암시할 수 있습니다.",alt:"학생의 관찰 가능한 행동과 태도로 대체하세요."},"어머니":{category:"가족배경",method:"패턴참고",status:"주의",reason:"가족 배경을 암시할 수 있습니다.",alt:"학생의 관찰 가능한 행동과 태도로 대체하세요."},"직장":{category:"사회경제적 지위",method:"즉시",status:"불가",reason:"부모·친인척의 직장명, 직종명, 직위명 등은 입력할 수 없습니다.",alt:"가정 배경 관련 표현을 삭제하세요."},"직위":{category:"사회경제적 지위",method:"즉시",status:"불가",reason:"사회·경제적 지위를 암시하는 표현입니다.",alt:"학생의 학교 활동 내용으로 대체하세요."}});
+Object.assign(forbiddenTerms,{"배틀로얄":{category:"게임·인터넷 은어",method:"즉시",status:"일반화필요",reason:"게임 전문용어 — 문맥에 따라 유지·일반화·교사확인 중 하나로 판정",alt:"문맥에 따라 판단 (활동 대상 설명에 필요하면 유지 가능, 소재 부각 과도 시 최소 일반화)",basisType:"학교 엄격 기준"},"파밍":{category:"게임·인터넷 은어",method:"즉시",status:"일반화필요",reason:"게임 전문용어 — 문맥에 따라 판정",alt:"문맥에 따라 판단 (자원 수집 과정 등으로 최소 일반화 가능)",basisType:"학교 엄격 기준"},"드랍":{category:"게임·인터넷 은어",method:"즉시",status:"일반화필요",reason:"게임 전문용어는 학교 문체에 부적절",alt:"획득 / 수집",basisType:"학교 엄격 기준"},"버프":{category:"게임·인터넷 은어",method:"즉시",status:"일반화필요",reason:"게임·인터넷 은어는 학교 문체에 부적절",alt:"강화 / 도움",basisType:"학교 엄격 기준"},"너프":{category:"게임·인터넷 은어",method:"즉시",status:"일반화필요",reason:"게임·인터넷 은어는 학교 문체에 부적절",alt:"약화 / 하향 조정",basisType:"학교 엄격 기준"},"어그로":{category:"게임·인터넷 은어",method:"즉시",status:"일반화필요",reason:"게임·인터넷 은어는 학교 문체에 부적절",alt:"관심 끌기",basisType:"학교 엄격 기준"},"탱커":{category:"게임·인터넷 은어",method:"즉시",status:"일반화필요",reason:"게임·인터넷 은어는 학교 문체에 부적절",alt:"방어 역할",basisType:"학교 엄격 기준"},"힐러":{category:"게임·인터넷 은어",method:"즉시",status:"일반화필요",reason:"게임·인터넷 은어는 학교 문체에 부적절",alt:"치유 역할",basisType:"학교 엄격 기준"},"갓겜":{category:"게임·인터넷 은어",method:"즉시",status:"일반화필요",reason:"인터넷 은어는 학교 문체에 부적절",alt:"인기 게임",basisType:"학교 엄격 기준"},"ㄹㅇ":{category:"인터넷 은어",method:"즉시",status:"일반화필요",reason:"인터넷 은어는 학교 문체에 부적절",alt:"정말",basisType:"학교 엄격 기준"},"ㅋㅋ":{category:"인터넷 은어",method:"즉시",status:"일반화필요",reason:"인터넷 은어는 학교 문체에 부적절",alt:"삭제",basisType:"학교 엄격 기준"},"대회":{category:"대회·수상",method:"패턴참고",status:"주의",reason:"교내·외 대회 참여 사실, 성적, 수상 실적은 서술형 항목에 입력할 수 없습니다.",alt:"대회명이 아닌 학교 교육활동 과정, 수업 참여, 탐구 과정 중심으로 바꾸세요."},"시상":{category:"대회·수상",method:"즉시",status:"불가",reason:"시상 관련 내용은 창체·세특·자유학기·행발에 입력할 수 없습니다.",alt:"시상 결과 대신 활동 과정과 역할을 작성하세요."},"입상":{category:"대회·수상",method:"즉시",status:"불가",reason:"입상 사실은 서술형 항목에 입력할 수 없습니다.",alt:"성과 표현을 삭제하고 관찰된 수행 과정으로 대체하세요."},"우수상":{category:"등위·수상",method:"즉시",status:"불가",reason:"수상명은 서술형 항목에 입력할 수 없습니다.",alt:"수상명 삭제 후 활동 과정 중심으로 작성하세요."},"장려상":{category:"등위·수상",method:"즉시",status:"불가",reason:"수상명은 서술형 항목에 입력할 수 없습니다.",alt:"수상명 삭제 후 활동 과정 중심으로 작성하세요."},"방과후학교":{category:"방과후학교",method:"즉시",status:"불가",reason:"방과후학교 활동은 행동특성 및 종합의견을 포함한 서술형 항목에 입력할 수 없습니다.",alt:"정규 교육활동에서 관찰된 내용으로 대체하세요."},"K-MOOC":{category:"온라인 공개강좌",method:"즉시",status:"불가",reason:"K-MOOC 관련 내용은 교과세특 등에 입력할 수 없습니다.",alt:"학교 수업 활동 중심으로 대체하세요."},"MOOC":{category:"온라인 공개강좌",method:"즉시",status:"불가",reason:"MOOC 관련 내용은 입력할 수 없습니다.",alt:"학교 수업 활동 중심으로 대체하세요."},"KOCW":{category:"온라인 공개강좌",method:"즉시",status:"불가",reason:"KOCW 관련 내용은 입력할 수 없습니다.",alt:"학교 수업 활동 중심으로 대체하세요."},"장학생":{category:"장학금",method:"즉시",status:"불가",reason:"장학생 관련 내용은 입력할 수 없습니다.",alt:"장학 관련 내용을 삭제하세요."},"장학금":{category:"장학금",method:"즉시",status:"불가",reason:"장학금 관련 내용은 입력할 수 없습니다.",alt:"장학 관련 내용을 삭제하세요."},"모의고사":{category:"성적",method:"즉시",status:"불가",reason:"모의고사 관련 성적 또는 실적은 입력할 수 없습니다.",alt:"수업 중 관찰된 학습 과정과 태도로 대체하세요."},"전국연합":{category:"성적",method:"즉시",status:"불가",reason:"전국연합학력평가 관련 내용은 입력할 수 없습니다.",alt:"정규 수업 활동에서 확인된 학습 태도로 대체하세요."},"석차":{category:"성적·서열",method:"즉시",status:"불가",reason:"석차·등위 표현은 서술형 항목에 입력할 수 없습니다.",alt:"비교 표현을 삭제하고 개별 성장 과정으로 작성하세요."},"부모":{category:"가족배경",method:"패턴참고",status:"주의",reason:"부모 또는 친인척의 사회·경제적 지위를 암시하는 내용은 입력할 수 없습니다.",alt:"학생의 학교생활에서 관찰된 행동으로 대체하세요."},"아버지":{category:"가족배경",method:"패턴참고",status:"주의",reason:"가족 배경을 암시할 수 있습니다.",alt:"학생의 관찰 가능한 행동과 태도로 대체하세요."},"어머니":{category:"가족배경",method:"패턴참고",status:"주의",reason:"가족 배경을 암시할 수 있습니다.",alt:"학생의 관찰 가능한 행동과 태도로 대체하세요."},"직장":{category:"사회경제적 지위",method:"즉시",status:"불가",reason:"부모·친인척의 직장명, 직종명, 직위명 등은 입력할 수 없습니다.",alt:"가정 배경 관련 표현을 삭제하세요."},"직위":{category:"사회경제적 지위",method:"즉시",status:"불가",reason:"사회·경제적 지위를 암시하는 표현입니다.",alt:"학생의 학교 활동 내용으로 대체하세요."}});
 const aiOnlyCategories = {
   "가족배경암시":{method:"AI필요",reason:"키워드가 아니라 문맥으로 판단되므로 규칙표로 자동 차단할 수 없음",guidance:"부모·가족의 사회경제적 지위, 직업, 재산을 암시하거나, 가정환경을 원인으로 학생의 특성을 설명하는 서술은 지양",action:"최종점검의 'AI로 편향표현 검사하기' 버튼으로만 판정"},
   "고정관념·편향표현":{method:"AI필요",reason:"키워드가 아니라 문맥으로 판단되므로 규칙표로 자동 차단할 수 없음",guidance:"성별·가정형태 등에 따라 특정 서술이 반복되는 패턴은 지양",action:"최종점검의 'AI로 편향표현 검사하기' 버튼으로만 판정"},
@@ -3188,7 +3205,7 @@ function setResultMode(mode) {
 // ===== 12. 파일 확장자 실제 검증 =====
 function validateFileExtension(file){
 const ext=file.name.split('.').pop().toLowerCase();
-const mimeMap={'xlsx':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','xls':'application/vnd.ms-excel','csv':'text/csv','tsv':'text/tab-separated-values','txt':'text/plain'};
+const mimeMap={'xlsx':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','xls':'application/vnd.ms-excel','csv':'text/csv','tsv':'text/tab-separated-values','txt':'text/plain','pdf':'application/pdf'};
 const expectedMime=mimeMap[ext];
 if(!expectedMime)return false;
 if(file.type&&file.type!==expectedMime){
@@ -3274,11 +3291,8 @@ unreadableDirectCount++;
 directRows.push({rowNumber:idx+1,originalText:line,detected:[{term:line,ruleId:'traffic-unreadable-input',severity:SEVERITY.PROHIBITED,expressions:[line],category:'입력 품질',status:'불가',reason:quality.reason,alt:'입력 확인 필요',teacherCheck:'원본 입력이 누락되거나 손상됐는지 확인',sourceLevel:'input-quality',source:'입력 품질 검사',basisType:'입력 품질 검사'}],status:"\uC0AD\uC81C\u00B7\uC218\uC815 \uD544\uC694",statusIcon:"\u{1F534}",statusKey:"danger",source:'direct',studentLabel:"\uC9C1\uC811 \uC785\uB825 "+(idx+1)+"\uBC88"});
 return;
 }
-// 공통 판정 통합 경로
-var unified=evaluateTrafficSentence(line,item);
-var detected=unified.map(function(u){return{term:u.expressions.join(', '),ruleId:u.ruleId,severity:u.severity,expressions:u.expressions,category:u.category,status:u.severity===SEVERITY.PROHIBITED?'불가':u.severity===SEVERITY.REVISE?'일반화필요':'주의',reason:u.reason,alt:u.alternative,teacherCheck:u.teacherCheck,sourceLevel:u.sourceLevel,source:u.source,basisType:u.basisType||'공식 기재 기준'};});
-const statusInfo=getTrafficStatusFromDetected(detected);
-directRows.push({rowNumber:idx+1,originalText:line,detected:detected,status:statusInfo.label,statusIcon:statusInfo.icon,statusKey:statusInfo.key,source:'direct',studentLabel:"\uC9C1\uC811 \uC785\uB825 "+(idx+1)+"\uBC88"});
+// 로컬 자동 판정은 하지 않고 원문 전체를 AI 정밀검토 대상으로 전달
+directRows.push({rowNumber:idx+1,originalText:line,detected:[],status:"AI 정밀검토 대상",statusIcon:"",statusKey:"pending",source:'direct',studentLabel:"\uC9C1\uC811 \uC785\uB825 "+(idx+1)+"\uBC88"});
 });
 // 전부 무의미한 직접 입력이면 차단
 if(!hasFile&&directRows.length>0&&unreadableDirectCount===directRows.length){
@@ -3315,15 +3329,14 @@ if(!originalText){fileRows.push({rowNumber:r+1,originalText:originalText,detecte
 var fileQuality=isUnreadableInput(originalText);
 if(!fileQuality.valid&&fileQuality.type==="UNREADABLE_INPUT"){
 fileRows.push({rowNumber:r+1,originalText:originalText,detected:[{term:originalText,ruleId:'traffic-unreadable-input',severity:SEVERITY.PROHIBITED,expressions:[originalText],category:'입력 품질',status:'불가',reason:fileQuality.reason,alt:'입력 확인 필요',teacherCheck:'원본 입력이 누락되거나 손상됐는지 확인',sourceLevel:'input-quality',source:'입력 품질 검사',basisType:'입력 품질 검사'}],status:"\uC0AD\uC81C\u00B7\uC218\uC815 \uD544\uC694",statusIcon:"\u{1F534}",statusKey:"danger",source:'file',studentLabel:displayStudent,categories:"입력 품질",alternatives:"입력 확인 필요",memo:"의미를 해석할 수 없는 자판 오입력 또는 손상된 문장"});continue;}
-// 공통 판정 통합 경로
-var unified=evaluateTrafficSentence(originalText,item);
-var detected=unified.map(function(u){return{term:u.expressions.join(', '),ruleId:u.ruleId,severity:u.severity,expressions:u.expressions,category:u.category,status:u.severity===SEVERITY.PROHIBITED?'불가':u.severity===SEVERITY.REVISE?'일반화필요':'주의',reason:u.reason,alt:u.alternative,teacherCheck:u.teacherCheck,sourceLevel:u.sourceLevel,source:u.source,basisType:u.basisType||'공식 기재 기준'};});
-const statusInfo=getTrafficStatusFromDetected(detected);
-fileRows.push({rowNumber:r+1,originalText:originalText,detected:detected,status:statusInfo.label,statusIcon:statusInfo.icon,statusKey:statusInfo.key,source:'file',studentLabel:displayStudent,categories:[...new Set(detected.map(function(d){return d.category;}).filter(Boolean))].join(", "),alternatives:detected.map(function(d){return d.alt;}).filter(Boolean).join(" / "),memo:detected.length?detected.map(function(d){return d.term+": "+(d.reason||d.alt||"");}).join(" | "):"\uADDC\uCE59\uD45C \uAE30\uC900 \uBC1C\uACAC \uC5C6\uC74C"});
+// 로컬 자동 판정은 하지 않고 원문 전체를 AI 정밀검토 대상으로 전달
+fileRows.push({rowNumber:r+1,originalText:originalText,detected:[],status:"AI 정밀검토 대상",statusIcon:"",statusKey:"pending",source:'file',studentLabel:displayStudent,categories:"",alternatives:"",memo:"AI가 문장 전체와 항목별 기준을 직접 검토"});
 }
 state.checkedRows=fileRows;state.checkedItem=item;
 }
 }
+// 로컬 자동 후보 요약·상세표는 표시하지 않는다. 최종 판정은 생성된 프롬프트를 받은 AI가 수행한다.
+
 // 통합 프롬프트 생성
 const allRows=[];
 directRows.forEach(function(r){allRows.push(r);});
@@ -3340,7 +3353,7 @@ renderTrafficProcessingInfo(directCount,fileCount);
 
 
 
-// ===== 🚦 공통 AI 프롬프트 빌더 =====
+// ===== 🚦 공통 AI 프롬프트 빌더 (13단계 v3 강화) =====
 function buildTrafficAIPrompt(opts){
 const{sourceType,item,rows,fileName,sheetName,columnName}=opts;
 const ctx=typeof getRecordContext==="function"?getRecordContext(item):{purpose:"생기부 항목",maxChars:500,maxBytes:1500,owner:"담당교사"};
@@ -3350,22 +3363,51 @@ let headerInfo=`- 입력 방식: ${sourceType}\n- 학교생활기록부 항목: 
 if(columnName){var colGeneralName=columnName.replace(/\s*\([A-Z]+열\)/,'');headerInfo+=`\n- 검토 대상 열: ${colGeneralName}`;}
 if(item&&item.includes("자유학기"))headerInfo+=`\n- 참고: 자유학기활동 프로그램 하나당 학교 권장값 500자 / 1,500Byte`;
 let itemRulesBlock="\n\n[항목별 판단 기준]";
-if(rules&&rules.focus){itemRulesBlock+=`\n- 기록 초점: ${rules.focus}\n- 관찰 대상: ${rules.observeTarget||""}\n- 반영 가능: ${rules.mustReflect||""}\n- 반영 금지: ${rules.mustNotReflect||""}\n- 예외: ${rules.exceptions||"없음"}\n- 교사 확인: ${rules.teacherCheck||""}`;}else{itemRulesBlock+="\n- 이 항목에 별도로 등록된 항목별 판단 기준 없음";}
-let schoolPolicyBlock="\n\n[학교 자체 입력 방침]";
+if(rules&&rules.focus){itemRulesBlock+=`\n- 기록 초점: ${rules.focus}\n- 관찰 대상: ${rules.observeTarget||""}\n- 반영 가능: ${rules.mustReflect||""}\n- 반영 금지: ${rules.mustNotReflect||""}\n- 예외: ${rules.exceptions||"없음"}\n- 조건부 교사 확인: ${rules.teacherCheck||""}\n- 적용 조건: 위 교사 확인 항목은 원문에 외부 활동·전언·추정·사실 불명확 등 관련 신호가 실제로 있을 때만 적용한다. 교사 입력 기본 전제와 충돌하면 기본 전제를 우선한다.`;}else{itemRulesBlock+="\n- 이 항목에 별도로 등록된 항목별 판단 기준 없음";}
+let schoolPolicyBlock="\n\n[학교별 추가 기준 — 전국 공통 법적 기준이 아니며 실제 학교 방침과 일치할 때만 적용]";
 if(schoolPolicy){
 var policyContent=schoolPolicy.replace(/^\[우리 학교 방침[^\]]*\]\n?/,"").trim();
-if(policyContent){schoolPolicyBlock+="\n"+policyContent;}else{schoolPolicyBlock+="\n- 이 항목에 별도로 등록된 학교 자체 방침 없음";}
+if(policyContent){schoolPolicyBlock+="\n- 아래 수치·횟수·운영 조건은 실제 사용 학교의 공식 방침과 일치하는 경우에만 적용한다. 일치 여부를 확인할 수 없으면 적용하지 말고 국가 공식 기준과 일반적인 엄격 문체 기준만 사용한다.\n"+policyContent;}else{schoolPolicyBlock+="\n- 이 항목에 별도로 등록된 학교 자체 방침 없음";}
 }else{schoolPolicyBlock+="\n- 이 항목에 별도로 등록된 학교 자체 방침 없음";}
 let rowBlocks="";
 rows.forEach(function(r){
 if(!r.originalText)return;
 var sourceLabel=r.source==='direct'?'[직접 입력 '+r.rowNumber+'번]':'[파일 입력 — 원본 '+r.rowNumber+'행 — 학생 구분값: '+(r.studentLabel||'원본 '+r.rowNumber+'행')+']';
-var hasDetected=r.detected&&r.detected.length;
-var candidateBlock='';
-if(hasDetected){candidateBlock='기계적으로 발견한 검토 후보:\n';r.detected.forEach(function(d){candidateBlock+='- 표현: '+d.term+'\n';candidateBlock+='  대표 규칙 ID: '+(d.ruleId||'없음')+'\n';candidateBlock+='  검토 이유: '+(d.reason||'규칙표 기반 탐지')+'\n';candidateBlock+='  교사 확인 포인트: '+(d.teacherCheck||'실제 관찰 사실 확인')+'\n';candidateBlock+='  기준 수준: '+(d.sourceLevel==='school'?'학교 자체 기준':'국가 공식 기준')+'\n';candidateBlock+='  기준 출처: '+((typeof d.source==='string'&&d.source)?d.source:(d.basisType||'공식 기재 기준'))+'\n';candidateBlock+='  검토 방향: '+(d.alt||'전체 문맥 확인')+'\n';});candidateBlock+='\n주의:\n위 후보는 최종 판정이 아닙니다.\n전체 문맥과 공식 기준을 바탕으로 다시 판단하세요.\n문제가 없으면 원문 유지로 처리하세요.\n';}else{candidateBlock='기계적으로 발견한 검토 후보: 없음\n\n주의:\n후보가 없더라도 전체 문맥, 학교 수업·교육과정 여부,\n교사의 직접 관찰 가능성, 금지·주의 표현을 다시 확인하세요.\n';}
-rowBlocks+=sourceLabel+'\n원문: '+r.originalText+'\n'+candidateBlock+'\n';
+rowBlocks+=sourceLabel+'\n원문: '+r.originalText+'\n\n';
 });
-return `너는 ${RECORD_POLICY_META.documentTitle}과 학교의 학교생활기록부 작성 연수 기준에 따라 생기부 문장의 기재금지\u00B7위험 표현을 정밀 검토하고 문제가 있는 부분만 최소한으로 수정하는 전문가야.\n\n[입력 판독 가능 여부 — 다른 판정보다 먼저 확인]\n각 행을 검토할 때 먼저 원문의 의미를 해석할 수 있는지 확인하세요.\n무의미한 자판 입력, 반복 문자, 기호만 있는 입력, 손상되어 문장으로 판독할 수 없는 입력은 '교사 확인 필요'로 처리하지 마세요.\n이 경우 원문의 의미를 추측하거나 새로운 생기부 문장을 만들지 말고 반드시 다음과 같이 출력하세요.\n- 수정유형: \u{1F534} 삭제·수정 필요\n- 수정본: 입력 확인 필요\n- 삭제·수정된 표현: 원문 전체\n- 추가·대체된 표현: 없음\n- 수정이유: 의미를 해석할 수 없는 자판 오입력 또는 손상된 문장으로, 생기부 문장 검토와 수정이 불가능함.\n- 글자수 / Byte: 8자 / 20Byte\n의미는 분명하지만 실제 사실이나 교육활동 여부만 확인해야 하는 경우에만 \u{1F7E1} 교사 확인 필요를 사용하세요.\n짧은 관찰 메모(예: 모둠활동 잘함, 발표 적극적, 친구 도와줌)는 의미가 있으므로 차단하지 마세요.\n\n[적용 기준]\n- ${RECORD_POLICY_META.documentTitle}\n- 근거 훈령: ${RECORD_POLICY_META.decreeNumber} (${RECORD_POLICY_META.effectiveDate} 시행)\n- 공식 포털 확인일: ${RECORD_POLICY_META.verifiedDate}\n\n아래 문장들에는 규칙 기반으로 기계적으로 추출한 검토 후보가 포함되어 있어.\n검토 후보는 참고 정보일 뿐 최종 판정이 아니야.\n후보가 있든 없든 모든 문장을 전체 문맥과 학교생활기록부 기재 기준에 따라 다시 검토해줘.\n\n[검토 대상 정보]\n${headerInfo}${itemRulesBlock}${schoolPolicyBlock}\n\n[가장 중요한 원칙]\n1. 원문에 없는 학생의 행동, 태도, 성취, 결과를 새로 만들어내지 않는다.\n2. 원문의 실제 관찰 사실과 교육적 의미를 최대한 유지한다.\n3. 기재금지 또는 위험한 핵심 부분만 최소한으로 수정한다.\n4. 문장을 더 화려하거나 과장되게 만들지 않는다.\n5. 원문에 구체적인 관찰 사실이 없으면 새로운 행동을 임의로 추가하지 않는다.\n6. 구체화할 근거가 부족하면 수정이유에 '교사 확인 필요'라고 표시한다.\n7. 학교 교육활동과 교사의 직접 관찰에 근거한 내용인지 확인한다.\n8. 허위, 과장, 추측, 상투적인 칭찬을 추가하지 않는다.\n9. AI가 생성한 내용을 교사의 판단 없이 그대로 입력하도록 안내하지 않는다.\n10. 학생이 작성한 자기평가서\u00B7소감문 등을 그대로 옮겨 적은 문장인지 확인하고, 그런 경우 교사 관찰자 시점의 문장으로 재구성한다.\n\n[핵심 확인사항]\n해당 활동이 학교 수업·교육과정 내에서 이루어졌는지 확인해주세요.\n- 교사가 직접 관찰할 수 있는 활동인지\n- 교외·외부·사교육 활동인지\n- 학생 자기평가나 소감만을 그대로 옮긴 것인지\n- 원문에 없는 행동이나 성과가 추가됐는지\n- 문제가 없으면 원문을 그대로 유지했는지\n- 필요한 부분만 최소 수정했는지\n- 공식 기준만으로 판단하기 어려우면 교사 확인 필요로 처리했는지\n\n11. 문제가 없는 문장은 '원문 유지'로 처리하고 수정하지 않는다.\n12. 금지·위험 표현만 최소한으로 삭제하거나 안전한 표현으로 바꾸고, 나머지는 그대로 둔다.\n13. 수정 시 원문의 실제 관찰 사실과 구조를 최대한 보존한다.\n14. 수정이 필요한 경우 '수정 전후 차이', '수정 이유', '최종 기록문'을 제공한다.\n15. 문제 없는 행은 수정 제안에 '원문 유지'라고만 적는다.\n\n[예외와 구분]\n1. AI라는 일반 개념 자체는 금지어가 아니다.\n2. UCC, PAPS, SNS, PPT, AI 등 일반화된 명사는 영문이라는 이유만으로 삭제하지 않는다.\n3. CCL, BY, NC, ND, SA는 의미가 드러나는 한글 표현으로 바꿀 수 있다 (CCL→저작물 이용 조건, BY→저작자 표시, NC→비영리, ND→변경 금지, SA→동일조건 변경허락). 정식 명칭·수업 자료 제목 등 허용 맥락이면 원문 유지 가능.\n4. 도서명\u00B7저자명 안의 고유명사는 문맥을 확인한다.\n5. 체육 관련 교과세특의 PAPS 1등급은 허용 예외를 고려한다.\n6. 특정 플랫폼명(유튜브, 구글, 카카오, 오픈AI, 마이크로소프트, 패들렛 등)은 '생성형 인공지능 도구', '온라인 학습 도구' 등으로 일반화한다.\n7. 교육관련기관(교육부 및 소속기관, 시도교육청 및 직속기관, 교육지원청 및 소속기관)은 기관명 기재 제한의 예외로 허용한다.\n\n[가운뎃점(·) 처리 원칙]\n1. 자율·자치활동, 기술·가정, 예술·체육활동 등 공식 명칭과 교과명의 가운뎃점은 기재금지가 아니다. 원문 유지한다.\n2. 도서명·작품명·기관명·고유명사 안의 가운뎃점도 원래 표기를 유지한다.\n3. 의미상 필요한 병렬(예: 학생·학부모)은 자연스러우면 유지 가능하다.\n4. 불필요한 목록식 반복(예: 발표·토론·보고서·실험)만 문장형으로 수정을 권장하되, 원문에 없는 활동 관계나 결과를 만들지 않는다.\n5. 가운뎃점만 발견됐다는 이유로 기재금지나 삭제 필수로 판정하지 않는다.\n\n[문장 작성 원칙]\n1. 교사 관찰자 시점으로 작성한다.\n2. 문장은 ~함, ~음, ~임 등의 명사형 종결을 중심으로 작성한다.\n3. 원문의 의미를 바꾸지 않는다.\n4. 공식 글자 수와 NEIS Byte 제한을 넘지 않게 한다.\n\n[최종 출력 형식]\n최종 결과는 마크다운 표로 출력해줘. 열은 반드시 다음 8개 열을 정확하게 사용해.\n\n| 행 | 수정유형 | 원문 | 수정본 | 삭제·수정된 표현 | 추가·대체된 표현 | 수정이유 | 글자수 / Byte |\n\n열 이름을 줄이거나 바꾸지 마.\n모든 원문 행을 원래 순서대로 출력해.\n\n[행 열 규칙]\n- 직접 입력은 '직접 입력 1번', '직접 입력 2번'처럼 표시\n- 파일 입력은 '원본 N행'으로 표시\n- 학생 구분 열을 선택했으면 '원본 N행 (구분값)'으로 함께 표시\n\n[수정본 규칙]\n- 문제가 없으면 원문을 그대로 작성\n- 문제가 있으면 문제 부분만 최소 수정한 최종 기록문 작성\n- 원문에 없는 행동·태도·역량·성과·성장 추가 금지\n\n[삭제·수정된 표현]\n- 원문에서 실제 삭제하거나 바꾼 표현만 기록\n- 없으면 '없음'\n\n[추가·대체된 표현]\n- 수정본에 실제 추가하거나 대체한 표현만 기록\n- 삭제만 했으면 '없음'\n- 원문에 없는 새로운 활동 사실을 넣지 않음\n\n[수정유형]\n- \u{1F7E2} 원문 유지\n- \u{1F7E1} 교사 확인 필요\n- \u{1F7E0} 일반화·대체 필요\n- \u{1F534} 삭제·수정 필요\n\n[수정이유]\n- 왜 유지·확인·대체·삭제했는지 간결하게 설명\n\n[글자수 / Byte]\n- 수정본 기준\n- 'N자 / NNNByte' 형식\n- 한글 3Byte, 영문·숫자 1Byte, 줄바꿈 1Byte\n\n[출력 제한]\n- 표 앞이나 뒤에 장문의 설명을 붙이지 않는다.\n- 엑셀 파일을 만들지 않는다.\n- 8열 표와 일반 설명에는 코드 블록을 사용하지 않는다.\n- 위 8열 마크다운 표를 중심으로 출력한다.\n\n[수정본만 복사 영역 — 반드시 8열 검토표 바로 뒤에 출력]\n8열 표를 모두 출력한 뒤 아래 형식의 영역을 반드시 추가해.\n\n[수정본만 복사] - 엑셀에 그대로 집어넣으세요.\n\x60\x60\x60\n수정본 1\n수정본 2\n수정본 3\n\x60\x60\x60\n\n규칙:\n- 8열 표의 '수정본' 열과 문장이 완전히 동일해야 한다.\n- 입력된 원래 순서를 유지한다.\n- 한 입력 행당 정확히 한 줄을 출력한다.\n- 문제가 없는 행도 원문 그대로 포함한다.\n- 교사 확인 필요 행도 누락하지 않는다.\n- 번호, 글머리표, 행 번호, 학생 구분값, 따옴표, 표 기호, 탭, 설명을 넣지 않는다.\n- 빈 줄을 넣지 않는다.\n- 문장 내부에 줄바꿈을 넣지 않는다.\n- 같은 문장을 합치거나 나누지 않는다.\n- 모든 행을 빠짐없이 출력한다.\n- 원문에 없는 사실을 추가하지 않는다.\n- 8열 표의 행 수와 수정본만 복사 영역의 줄 수가 반드시 같아야 한다.\n- 코드 블록 안에는 수정본 문장만 넣고 제목·행번호·학생구분값·열제목을 넣지 않는다.\n- 이 영역은 교사가 복사해서 Excel 한 열에 바로 붙여넣기 위한 것이다.\n\n[검토 데이터 시작]\n\n${rowBlocks}\n[검토 데이터 끝]\n\n이제 모든 행을 전체 문맥과 공식 기준에 따라 정밀 검토하고 지정된 8열 마크다운 표로 출력해줘.`;
+var p='';
+p+=`너는 ${RECORD_POLICY_META.documentTitle}과 학교의 학교생활기록부 작성 연수 기준에 따라, 이미 작성된 생기부 문장을 기재 전 최종 점검하고 문제가 있는 부분만 최소한으로 수정하는 전문가야.\n\n`;
+p+=`[이 기능의 정확한 역할]\n이 기능은 생기부를 새로 작성하는 것이 아니다.\n나이스, 한글, 워드, 엑셀, PDF, 다른 생성형 AI, 기존 학교 문서, 이전 작성본, 교사가 직접 쓴 초안 등 사이트 밖에서 이미 작성된 학교생활기록부 문장을 가져와 기재 전에 최종 점검하는 기능이다.\n입력 문장이 이 사이트에서 만들어졌다고 가정하지 마라.\n입력 출처가 외부라는 이유로 기재 불가나 교사 확인으로 판정하지 마라.\n목적은 새 문장을 창작하는 것이 아니라 다음을 점검하는 것이다.\n- 학교생활기록부 기재 가능성\n- 문맥과 의미\n- 맞춤법·문법·조사·호응\n- 실제 활동과 표현의 사실 범위\n- 학교생활기록부 문체\n- 금지·지양 요소\n- 학생 활동·과정·역할·결과·태도 보존\n원문 전체를 다른 스타일로 다시 쓰지 마라.\n실제로 문제가 있는 단어·구·조사·호응만 최소 수정하라.\n정상 문장은 원문 그대로 유지하라.\n원문에 없는 행동, 역할, 성취, 태도, 관계, 결과를 새로 만들지 마라.\n\n`;
+p+=`[기준 적용 원칙]\n이 프롬프트에 제공된 공식 기준, 항목별 기준과 학교 엄격 문체 기준을 적용하라.\n임의의 웹 검색 결과로 새로운 금지·허용 기준을 추가하지 마라.\n기준에 없는 사항은 문장 전체의 사실성, 문맥, 활동 보존과 최소 수정 원칙으로 판단하라.\n\n`;
+p+=`[입력 판독 가능 여부 — 다른 판정보다 먼저 확인]\n각 행을 검토할 때 먼저 원문의 의미를 해석할 수 있는지 확인하세요.\n무의미한 자판 입력, 반복 문자, 기호만 있는 입력, 손상되어 문장으로 판독할 수 없는 입력은 '교사 확인 필요'로 처리하지 마세요.\n이 경우 원문의 의미를 추측하거나 새로운 생기부 문장을 만들지 말고 반드시 다음과 같이 출력하세요.\n- 수정유형: 🔴 삭제·수정 필요\n- 수정본: 입력 확인 필요\n- 삭제·수정된 표현: 원문 전체\n- 추가·대체된 표현: 없음\n- 수정이유: 의미를 해석할 수 없는 자판 오입력 또는 손상된 문장으로, 생기부 문장 검토와 수정이 불가능함.\n- 글자수 / Byte: 8자 / 20Byte\n의미는 분명하지만 실제 사실이나 교육활동 여부만 확인해야 하는 경우에만 🟡 교사 확인 필요를 사용하세요.\n짧은 관찰 메모(예: 모둠활동 잘함, 발표 적극적, 친구 도와줌)는 의미가 있으므로 차단하지 마세요.\n\n`;
+p+=`[적용 기준]\n- ${RECORD_POLICY_META.documentTitle}\n- 근거 훈령: ${RECORD_POLICY_META.decreeNumber} (${RECORD_POLICY_META.effectiveDate} 시행)\n- 공식 포털 확인일: ${RECORD_POLICY_META.verifiedDate}\n- 국가 공식 기준: 명시적 금지, 허용, 예외, 직접 관찰·평가 원칙 등 전국 공통 기준\n- 학교 엄격 기준: 공식상 지양, 부득이한 경우, 단위학교 판단으로 되어 있으나 일반 학교의 깐깐한 점검에서 기본 수정 대상으로 처리하는 기준\n학교 엄격 기준을 전국 공통 법적 금지라고 과장하지 마세요.\n\n`;
+p+=`[교사 입력 기본 전제]\n사용자가 입력한 생기부 문장은 교사가 실제로 관찰한 학생 활동을 바탕으로 작성한 기록으로 기본 간주하세요.\n매 문장마다 다음을 자동으로 붙이지 마세요:\n- 실제 수업 과제였는지 확인 필요\n- 교사가 직접 관찰했는지 확인 필요\n- 학교 교육과정 내 활동인지 확인 필요\n원문에 명백한 외부 활동·전언·추정·사실 불명확 신호가 있을 때만 교사 확인 대상으로 올리세요.\n\n`;
+p+=`[세 층위 판단 기준]\n모든 판정 이유는 다음 세 층위 중 하나 이상으로 명확히 구분하라.\n1. [공식 기준] — 공식 기재 제한, 개인정보와 민감정보, 확인되지 않은 외부 실적, 항목 취지에 맞지 않는 내용, 사실과 다른 단정, 안전한 최소 수정이 어려운 내용\n2. [학교 엄격 기준] — 자연스러운 우리말 대체가 가능한 외국어·외래어, 불필요한 상품명·플랫폼명, 게임식·인터넷식 표현, 일반적인 나열에 사용된 특수기호, 학교 기록 문체에 맞게 다듬을 표현\n3. [문장 품질] — 맞춤법과 문법, 조사와 서술어의 호응, 주체·대상·행동의 명확성, 문장 연결, 중복, 사실 범위, 의미 모호성\n학교 엄격 기준을 공식 금지 사항처럼 설명하지 마라.\n각 행의 수정이유에 실제 적용한 태그를 표시하라. 예: [공식 기준], [학교 엄격 기준], [문장 품질], [교사 확인]\n\n`;
+p+=`아래 모든 문장을 특정 단어 목록이나 사전 판정에 기대지 말고, 문장 전체의 맥락과 학교생활기록부 기재 기준에 따라 직접 검토해줘.\n\n`;
+p+=`[행별 종합 검사 — 각 행을 바로 🟢로 판정하지 말고 다음 12개 영역을 빠짐없이 검사하라]\n1. 공식 기재 제한과 개인정보\n2. 선택한 생기부 항목의 취지 및 문체 적합성\n3. 실제 활동 범위와 결론 범위의 일치\n4. 사실의 과장·확대·축소 여부\n5. 주체·대상·행동의 명확성\n6. 맞춤법·문법·조사·호응\n7. 문장 연결·반복·불필요한 명사 나열\n8. 영문·로마자·영문 약어\n9. 외국어·외래어·한글 음역어\n10. 상품명·브랜드명·플랫폼명·게임식 표현\n11. 문장부호·괄호·슬래시·가운뎃점 등 특수기호와 나열 방식\n12. 활동·과정·역할·결과 보존 및 사실 창작 여부\n한 가지 문제를 발견했다고 검사를 중단하지 마라.\n한 행에 여러 문제가 있으면 모두 반영한 하나의 최소 수정본을 작성하라.\n\n`;
+p+=`[4단계 처리 구조 — 반드시 이 순서로 처리]\n1단계 원문 전수 검사: 12개 검사 영역으로 원문 전체를 확인한다. 문제 후보를 모두 찾는다. 첫 번째 문제를 발견한 뒤 검사를 끝내지 않는다.\n2단계 최소 수정본 작성: 문제가 있는 단어, 구, 조사, 호응, 문장 연결만 수정한다. 정상 부분과 문장 순서는 최대한 유지한다. 구체적인 학생 활동을 일반적인 문장으로 축약하지 않는다. 원문에 없는 사실을 추가하지 않는다.\n3단계 수정본 전수 재검사: AI가 만든 수정본을 동일한 12개 영역으로 다시 검사한다. 원문에서 놓친 문제가 남아 있는지, 수정 과정에서 새로운 오류가 생겼는지, 영문·음역어·특수기호·가운뎃점·문법 오류·중복이 남아 있는지, 활동이 축약되거나 사실이 추가되었는지 확인한다. 문제가 남아 있으면 다시 수정한다.\n4단계 최종 일관성 검사: 표의 판정, 수정본, 삭제·수정된 표현, 대체 표현, 수정이유가 서로 일치하는지 확인한다. 🟢이면 수정본이 원문과 완전히 같은지 확인한다. 수정본만 복사 영역이 표의 수정본 열과 한 글자도 다르지 않은지 확인한다. 입력 행 수와 출력 행 수가 같은지 확인한다. 문제가 남은 상태로 답변을 끝내지 않는다.\n\n`;
+p+=`[영문·약어·음역어 처리 규칙]\n영문 약어와 외국어 전문용어를 자동으로 허용하지 마라.\n중요: 영어 표현을 한글로 소리만 옮긴 것은 우리말 대체가 아니다.\n예: CCL→크리에이티브 커먼즈 라이선스, license→라이선스, simulation→시뮬레이션, presentation→프레젠테이션\n위와 같은 음역 표기는 여전히 외국어·외래 표현이다.\n단순히 영문을 한글 음역으로 길게 풀어 쓰는 것을 적절한 수정으로 판정하지 마라.\n\n다음 원칙을 적용하라.\n1. 문맥상 자연스러운 우리말로 바꾸어도 활동과 전문적 의미가 손상되지 않으면 🟠로 판정하고 우리말로 바꾼다.\n  예: 플레이→게임 진행, 이미지→시각 자료 또는 사진, 레시피→조리법, 소셜미디어→사회관계망 서비스, 프레젠테이션→발표 자료, 텍스트→글, 페이지→화면, 디자인→구성, 메뉴→음식, OX 문항→진위형 문항, 라이선스 범위→이용 허락 범위, 시뮬레이션→모의실험, 캡처→화면 저장\n2. 영문 약어가 문장의 핵심 학습 대상이 아니면 삭제하고 우리말 개념으로 바꾼다.\n  예: "CCL 조건과 저작물 이용 가능 여부를 연결한 문항을 제작함." → "저작물 이용 허락 조건과 이용 가능 여부를 연결한 문항을 제작함."\n3. 영문 기호 자체가 학생이 학습·분류·해석한 대상이면 기호를 무조건 삭제하지 않는다. 우리말 의미를 먼저 제시하고 필요한 경우에만 괄호 안에 영문 기호를 병기한다.\n  예: "CCL의 BY·NC·ND·SA 의미를 구분하는 문항을 제작함." → "저작자 표시(BY), 비영리(NC), 변경 금지(ND), 동일 조건 변경 허락(SA)의 의미를 구분하는 문항을 제작함."\n  잘못된 수정: 가운뎃점을 쉼표로 바꾸는 것만으로 수정 완료 처리하지 마라.\n4. 공식 명칭·약어라도 문장에 반드시 필요한지 먼저 판단하라. 학생 활동을 설명하는 데 필요하지 않으면 우리말 개념으로 일반화하라.\n5. 우리말 대체가 전문적 의미를 왜곡하거나 해당 영문 기호 자체를 배우는 활동이면 필요한 범위에서 유지할 수 있다. 그러나 유지 이유를 구체적으로 설명해야 한다.\n6. 특정 단어만으로 자동 판정하는 고정 치환 사전을 만들지 마라. 문장 전체의 활동 필요성, 대체 가능성, 사실 왜곡 위험을 판단하라.\n\n`;
+p+=`[문맥·사실 범위 검사]\n금지어나 외래어가 없더라도 다음은 🟠 또는 🟡 검토 대상이다.\n- 주체나 대상이 모호함\n- 누구의 허락·동의·확인인지 불분명함\n- 조사한 범위보다 결론이 넓거나 다름 (예: 스시와 라멘만 조사했는데 "나라별 음식 특징" → "일본 음식의 특징")\n- 조사와 서술어의 호응이 어색함 (예: "선택 정보를 확인되도록" → "선택 정보가 확인되도록")\n- 명사 나열 때문에 의미가 불분명함\n- 실제 활동과 표현의 의미가 맞지 않음\n- 같은 내용이 반복됨\n- 문법적으로 가능하지만 생기부 문체로 어색함\n주의: 조사 범위 오류를 수정할 때 AI가 임의로 새 사실을 만들지 마라. 원문에서 확인 가능한 범위로만 좁혀라.\n\n`;
+p+=`[검토 대상 정보]\n${headerInfo}${itemRulesBlock}${schoolPolicyBlock}\n\n`;
+p+=`[네 단계 판정 체계]\n🔴 삭제·수정 필요:\n- 명시적 기재 금지(공인어학시험, 자격증, 교외대회, 논문, 해외활동, 방과후학교, K-MOOC 등)\n- 개인정보·민감정보\n- 사실 오류 또는 사실 날조\n- 판독 불가능한 자판 오입력·손상 문장\n- 항목상 기록할 수 없는 내용\n- 안전한 최소 수정이 어려운 내용\n\n🟠 일반화·대체 필요:\n- 우리말 대체가 명확한 영문·외래 표현 (음역 확장이 아닌 진짜 우리말 대체)\n- 불필요한 상품명·게임 은어\n- 문법·조사·호응 오류\n- 사실 범위 불일치 (조사 범위보다 결론이 넓은 경우)\n- 문맥상 명확하게 바로잡을 수 있는 모호한 표현\n- 학교생활기록부 문체로 어색한 표현\n- 브랜드·플랫폼·상품·게임·서비스를 불필요하게 부각한 표현\n- 가운뎃점·슬래시·괄호·특수문자·기호의 불필요한 사용(공식 명칭 안의 것은 예외)\n- 폭력적·선정적 맥락 또는 소재가 학생의 학습 활동보다 앞서는 표현\n- 과장·단정·추상적 칭찬\n\n🟡 교사 확인 필요:\n- 원문만으로 어떤 사실이 맞는지 결정할 수 없음\n- 수정하면 원문에 없는 사실을 만들어야 함\n- 여러 해석 중 하나를 AI가 임의로 선택해야 함\n- 공식 명칭·작품명·기관명·전문용어를 바꾸면 사실이 왜곡될 가능성이 있음\n- 수치·성과·수상·자격·기간 등 사실 확인이 필요한 구체 정보\n- 항목·학년·교육과정에 따라 허용 여부가 달라지는 경계 사례\n\n🟢 원문 유지 — 다음 조건을 모두 통과한 경우에만 사용:\n- 공식 기재 기준 문제 없음\n- 학교 엄격 기준상 대체 가능한 표현 없음\n- 영문·약어·외래어를 유지해야 할 명확한 이유가 있음 (또는 영문·약어·외래어가 없음)\n- 문법·조사·호응 오류 없음\n- 의미 모호성 없음\n- 사실 범위 오류 없음\n- 학생 활동보다 상품이나 소재가 과도하게 부각되지 않음\n- 일반 나열에 사용된 불필요한 가운뎃점이 없음\n- 수정할 명확한 이유가 없음\n🟢이면 수정본은 원문과 완전히 같아야 한다.\n한 문장에 여러 문제가 있으면 가장 높은 심각도를 쓰되 수정이유에 모든 근거를 적으세요.\n\n`;
+p+=`[절대 수정 원칙 — 활동 보존 + 문제 표현 최소 수정]\n반드시 보존할 것:\n- 학생이 실제로 한 행동\n- 조사·비교·분류·제작·수정 과정\n- 결과물\n- 맡은 역할\n- 협력 내용\n- 학습한 개념\n- 태도와 변화\n- 자료 선별·분석·구성·제작 과정\n- 교사가 관찰한 특성, 이미 적절한 문장 구조\n- 후반부 학습 내용과 성취\n\n다음과 같은 축약을 절대 금지한다:\n- 구체적인 자료 제작·수정·설명 활동 → "자료를 조사함" (X)\n- 친구에게 도구 활용 방법을 안내하고 공동 결과물을 개선함 → "활동에 참여함" (X)\n- 과제를 수행함 (X)\n- 관련 내용을 이해함 (X)\n\n문장 전체를 새로 쓰지 말고 실제 문제가 있는 단어·구·기호만 최소 수정하세요.\n정상 문장은 과잉수정하지 마세요. 문제가 없으면 원문 그대로 유지하세요.\n문제가 있는 표현만 고치고 정상 부분은 최대한 원문 그대로 유지하라.\n\n`;
+p+=`[사실 왜곡 방지]\n공식 명칭·도서명·작품명·기관명·교과 전문용어는 무조건 삭제하거나 임의 일반화하지 마세요.\n다음 중 하나로 처리하세요:\n1. 그대로 유지\n2. 한글 풀이 병기\n3. 맥락을 유지하는 최소 일반화\n4. 사실 왜곡 위험이 있으면 🟡 교사 확인\n\n`;
+p+=`[전면 검사 범위 — 예시 목록만 찾지 말고 문맥 전체를 판단]\n- 영문, 영문 약자, 외국어, 외래어\n- 가운뎃점(·) 및 유사 문자, 슬래시(/), 괄호\n- 콜론·세미콜론·화살표·별표·해시·앳 기호 등 특수문자\n- 게임 은어·인터넷 은어(배틀로얄, 파밍, 드랍, 버프, 너프, 메타 등)\n- 브랜드·플랫폼·서비스·상품명(유튜브, 구글, 카카오 등)\n- 작품·게임명\n- 폭력적·선정적·사행성 맥락\n- 수치·백분율·등수·점수·기간·단위\n- 추정·전언·과장·단정\n- 학생이 아닌 소재 설명 중심 문장\n- 항목별 금지·예외, 학년별 자율·자치활동 명칭\n- 글자 수와 UTF-8 Byte, 판독 불가능 입력\n- 개인정보와 민감정보\n\n`;
+p+=`[최종 판정의 핵심 원칙 — 사전이 아닌 문맥으로 결정]\n내부 단어 목록과 예시 목록은 최종 판정 기준이 아니다.\n최종 판정은 반드시 문장 전체의 맥락으로 결정한다.\n- 단어가 있다는 이유만으로 자동 수정하지 않는다.\n- 목록에 없다는 이유만으로 자동 유지하지 않는다.\n- 같은 표현도 문맥에 따라 🟢·🟠·🟡 중 판정이 달라진다.\n\n문맥 판정 기준 (모든 표현에 동일 적용):\n1. 학생의 실제 수행을 설명하는 데 그 표현이 필요한가?\n2. 더 안전한 표현으로 바꿔도 활동 사실이 유지되는가?\n3. 소재·게임·브랜드 설명이 학생 활동보다 과도하게 부각되는가?\n4. 학교생활기록부 문체에 자연스러운가?\n5. 수정하면 구체적 활동이 축약되거나 왜곡되지 않는가?\n\n위 5가지 중:\n- 1번 YES + 5번 YES(수정 시 왜곡됨) → 🟢 유지 또는 🟡 교사 확인\n- 2번 YES(대체 가능) + 3번 YES(소재 과도 부각) + 4번 NO(부자연스러움) → 🟠 일반화\n- 활동 설명에 필수적이며 바꾸면 사실 왜곡 → 🟢 유지\n- 활동 설명에 불필요하며 게임·인터넷 맥락이 과도 → 🟠 최소 수정\n\n예시 (고정 판정이 아닌 문맥 분기 설명):\n- "배틀로얄 장르의 게임 규칙을 분석하고 전략 보고서를 작성함" → 장르 표현이 분석 활동의 대상 설명에 필요 → 문맥에 따라 유지 가능(🟢) 또는 소재명만 최소 일반화(🟠)\n- "배틀로얄 게임의 장르와 생존 방식, 파밍 과정을 중심으로 자료를 선별함" → 게임 전문용어가 학생 활동보다 과도하게 부각됨 → 🟠 문제 단어만 최소 수정, 활동(자료 선별·구성·제작)은 보존\n- "친구와 배틀로얄 게임을 하며 즐거운 시간을 보냄" → 학습 활동이 아닌 여가 묘사 → 🟡 또는 🔴\n\n`;
+p+=`[영문·외래어·특수문자·브랜드 — 동일 문맥 판정 원칙]\n1. 영문/영문 약자: 공식 명칭이거나 바꾸면 사실 왜곡 → 유지 또는 🟡. 한글 대체가 자연스럽고 활동 사실 유지됨 → 🟠. 무조건 허용·무조건 수정 모두 금지. 단, 한글 음역(크리에이티브 커먼즈 라이선스 등)으로 바꾸는 것은 대체가 아님.\n2. 외래어/외국어: 위 5가지 판정 기준 동일 적용. 음역어(시뮬레이션, 프레젠테이션, 라이선스 등)도 우리말 대체 대상이다.\n3. 게임 은어·인터넷 은어: 목록 등록 여부와 관계없이 문맥으로 판정. 활동 설명에 필수적이면 유지 가능, 소재 부각이 과도하면 최소 수정.\n4. 브랜드·플랫폼·상품·게임명: 학습 활동의 대상으로 필요하면 유지 가능, 상업성이 부각되면 🟠. 실제 음식명·게임 장르명은 활동의 사실 관계이므로 함부로 삭제하지 마라.\n5. 가운뎃점(·): 학교 엄격 문체 기준에서 일반적인 항목 나열에 가운뎃점을 사용하지 마라. 원문과 수정본의 가운뎃점을 모두 검사하고, 일반적인 단어·행동·조건·절차 나열에 사용된 가운뎃점은 쉼표, 과/와, 및 등 자연스러운 문장형으로 최소 수정하라. 단순히 쉼표로 일괄 치환하지 말고 문장 구조와 조사 호응을 확인하여 가장 자연스러운 표현을 선택하라. 예: 설계·분석·모의실험 업무→설계, 분석, 모의실험 업무 / 숫자·문자가→숫자와 문자가 / 차단·증거 확보·신고 중→차단, 증거 확보, 신고 중. 법령명·기관명·작품명 또는 공식 고유 명칭의 정식 표기에 포함된 가운뎃점은 유지할 수 있으나 유지 시 수정이유에 공식 표기라서 유지했다고 명시하라.\n6. 슬래시·괄호·특수문자: 공식 표기 외 불필요 사용 → 🟠 권장. 의미상 필요하면 유지.\n7. 수치·단위: 평가 수치(점수·등급·석차) → 🔴. 활동 맥락 수치는 문맥 판단.\n8. 작품명·게임명: 학습 대상으로 필요하면 유지, 소재 설명이 활동보다 과도하면 소재명만 최소 일반화. '게임'이라는 단어 자체를 자동으로 수정하지 마라.\n\n`;
+p+=`[가장 중요한 원칙]\n1. 원문에 없는 학생의 행동, 태도, 성취, 결과를 새로 만들어내지 않는다.\n2. 원문의 실제 관찰 사실과 교육적 의미를 최대한 유지한다.\n3. 기재금지 또는 위험한 핵심 부분만 최소한으로 수정한다.\n4. 문장을 더 화려하거나 과장되게 만들지 않는다.\n5. 정상 문장은 과잉수정 금지. 문제 없으면 🟢 원문 유지.\n6. 교사 확인 문구를 자동으로 남발하지 않는다.\n7. 예문을 하드코딩하지 않는다. 모든 문장을 개별 문맥에 맞게 판정한다.\n8. 수정본에 설명·주석·괄호 메모를 섞지 않는다. 수정본은 기록문 자체만.\n9. 모든 행을 누락 없이 처리한다.\n10. 입력 출처가 외부(나이스·한글·워드·엑셀·PDF·다른AI·학교문서 등)라는 이유로 기재 불가·교사 확인으로 판정하지 않는다.\n11. 영문을 한글 음역으로만 바꾸는 것은 적절한 수정이 아니다. 반드시 자연스러운 우리말로 바꿔라.\n\n`;
+p+=`[수정 사례와 유지 사례 — 고정 치환표가 아닌 문맥 판단 참고]\n사실 범위 — 수정: "스시와 라멘을 조사해 나라별 음식 특징을 정리함." → "스시와 라멘을 조사해 일본 음식의 특징을 정리함." / 유지: "여러 나라의 음식을 실제로 비교해 나라별 음식 특징을 정리함." → 원문 유지 가능.\n게임 표현 — 수정: "게임 플레이와 파밍 과정을 정리함." → "게임 진행과 자원 수집 과정을 정리함." / 유지: "생존 전략 게임의 특징을 비교함." → 게임 장르가 실제 학습 대상이면 원문 유지 가능.\n영문 기호 — 수정: "CCL 조건을 판단함." → "저작물 이용 허락 조건을 판단함." / 조건부 유지: BY, NC, ND, SA 자체의 의미를 학습한 경우 → "저작자 표시(BY), 비영리(NC), 변경 금지(ND), 동일 조건 변경 허락(SA)"처럼 우리말 의미와 병기.\n특수기호 — 수정: "설계·분석·모의실험 업무" → "설계, 분석, 모의실험 업무" / 유지: 공식 기관명·법령명·작품명에 포함된 정식 가운뎃점 → 공식 표기이면 유지 가능.\n전문용어 — 수정: 일상적 의미의 "시뮬레이션" → "모의실험" / 유지: 교과에서 특정 전문 개념 자체를 정확히 가리키며 우리말 대체 시 의미가 달라지는 경우 → 유지 이유를 명시하고 원문 유지 가능.\n이 사례들은 고정 치환표로 쓰지 말고 문맥 판단 참고로만 사용하라.\n\n`;
+p+=`[문장 작성 원칙]\n1. 교사 관찰자 시점으로 작성한다.\n2. 문장은 ~함, ~음, ~임 등의 명사형 종결을 중심으로 작성한다.\n3. 원문의 의미를 바꾸지 않는다.\n4. 공식 글자 수와 NEIS Byte 제한을 넘지 않게 한다.\n\n`;
+p+=`[최종 출력 형식]\n최종 결과는 마크다운 표로 출력해줘. 열은 반드시 다음 8개 열을 정확하게 사용해.\n\n| 행 / 학생 구분 | 수정유형 | 원문 | 수정본 | 삭제·수정된 표현 | 추가·대체된 표현 | 수정이유 | 글자수 / Byte |\n\n열 이름을 줄이거나 바꾸지 마.\n모든 원문 행을 원래 순서대로 빠짐없이 출력해.\n\n`;
+p+=`[행 열 규칙]\n- 직접 입력은 '직접 입력 1번', '직접 입력 2번'처럼 표시\n- 파일 입력은 '원본 N행'으로 표시\n- 학생 구분 열을 선택했으면 '원본 N행 (구분값)'으로 함께 표시\n\n`;
+p+=`[수정본 규칙]\n- 문제가 없으면 원문을 그대로 작성\n- 문제가 있으면 문제 부분만 최소 수정한 최종 기록문 작성\n- 원문에 없는 행동·태도·역량·성과·성장 추가 금지\n\n`;
+p+=`[삭제·수정된 표현]\n- 원문에서 실제 삭제하거나 바꾼 표현만 기록\n- 없으면 '없음'\n\n[추가·대체된 표현]\n- 수정본에 실제 추가하거나 대체한 표현만 기록\n- 삭제만 했으면 '없음'\n- 원문에 없는 새로운 활동 사실을 넣지 않음\n\n`;
+p+=`[수정유형]\n- 🟢 원문 유지\n- 🟡 교사 확인 필요\n- 🟠 일반화·대체 필요\n- 🔴 삭제·수정 필요\n\n[수정이유]\n- 왜 유지·확인·대체·삭제했는지 간결하게 설명\n\n[글자수 / Byte]\n- 수정본 기준\n- 'N자 / NNNByte' 형식\n- 한글 3Byte, 영문·숫자 1Byte, 줄바꿈 1Byte\n\n`;
+p+=`[출력 제한]\n- 표 앞이나 뒤에 장문의 설명을 붙이지 않는다.\n- 엑셀 파일을 만들지 않는다.\n- 8열 표와 일반 설명에는 코드 블록을 사용하지 않는다.\n- 위 8열 마크다운 표를 중심으로 출력한다.\n\n`;
+p+=`[자체 감사 — 표 아래에 반드시 출력]\n8열 표와 수정본만 복사 영역을 모두 출력한 뒤 다음 항목을 반드시 출력하라.\n- 입력 행 수\n- 출력 행 수\n- 🔴 건수\n- 🟠 건수\n- 🟡 건수\n- 🟢 건수\n- 누락 행\n- 활동을 축약한 의심 행\n- 원문에 없던 사실을 추가한 의심 행\n- 영문·약어를 설명 없이 유지한 의심 행\n- 영문을 한글 음역으로만 바꾼 의심 행\n- 수정본 내 가운뎃점 잔존 행\n- 공식 고유 표기가 아닌데 가운뎃점을 유지한 의심 행\n입력 행 수와 출력 행 수가 다르면 누락 행을 보완한 뒤 답변을 끝내라.\n가운뎃점 잔존 행이 있으면 공식 표기 여부를 다시 확인하고, 일반 나열이면 수정한 뒤 답변을 끝내라.\n\n`;
+p+=`[수정본만 복사 영역 — 반드시 8열 검토표 바로 뒤에 출력]\n8열 표를 모두 출력한 뒤 아래 형식의 영역을 반드시 추가해.\n\n[수정본만 복사] - 엑셀에 그대로 집어넣으세요.\n` + '`' + '`' + '`' + `\n수정본 1\n수정본 2\n수정본 3\n` + '`' + '`' + '`' + `\n\n규칙:\n- 8열 표의 '수정본' 열과 문장이 완전히 동일해야 한다.\n- 입력된 원래 순서를 유지한다.\n- 한 입력 행당 정확히 한 줄을 출력한다.\n- 문제가 없는 행도 원문 그대로 포함한다.\n- 교사 확인 필요 행도 누락하지 않는다.\n- 번호, 글머리표, 행 번호, 학생 구분값, 따옴표, 표 기호, 탭, 설명을 넣지 않는다.\n- 빈 줄을 넣지 않는다.\n- 문장 내부에 줄바꿈을 넣지 않는다.\n- 같은 문장을 합치거나 나누지 않는다.\n- 모든 행을 빠짐없이 출력한다.\n- 원문에 없는 사실을 추가하지 않는다.\n- 8열 표의 행 수와 수정본만 복사 영역의 줄 수가 반드시 같아야 한다.\n- 코드 블록 안에는 수정본 문장만 넣고 제목·행번호·학생구분값·열제목을 넣지 않는다.\n- 이 영역은 교사가 복사해서 Excel 한 열에 바로 붙여넣기 위한 것이다.\n\n`;
+p+=`[검토 데이터 시작]\n\n${rowBlocks}\n[검토 데이터 끝]\n\n이제 모든 행을 전체 문맥과 공식 기준에 따라 정밀 검토하고 지정된 8열 마크다운 표로 출력해줘.`;
+return p;
 }
 
 // ===== 🚦 처리 안내 렌더링 =====
@@ -3385,97 +3427,15 @@ container.innerHTML=html;
 }
 
 // ===== 🚦 직접 입력 결과 렌더링 =====
-function renderTrafficDirectResult(allResults,item){
-const resultDiv=document.getElementById('traffic-all-details-content')||document.getElementById('traffic-result');
-if(!allResults||!allResults.length){if(resultDiv){resultDiv.innerHTML='';resultDiv.className='traffic-result hidden';}return;}
-const danger=allResults.filter(function(r){return r.statusKey==="danger";}).length;
-const warning=allResults.filter(function(r){return r.statusKey==="warning";}).length;
-const generalize=allResults.filter(function(r){return r.statusKey==="generalize";}).length;
-const safe=allResults.filter(function(r){return r.statusKey==="safe";}).length;
-resultDiv.classList.remove('hidden','danger','warning','safe','generalize');
-if(danger>0)resultDiv.classList.add('danger');
-else if(warning>0)resultDiv.classList.add('warning');
-else if(generalize>0)resultDiv.classList.add('generalize');
-else resultDiv.classList.add('safe');
-var html='<div><div style="margin-bottom:12px;"><strong>\u{1F6A6} 신호등 검사 결과</strong> ('+allResults.length+'개 문장)</div>';
-html+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">';
-if(danger>0)html+='<span style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:20px;padding:3px 10px;font-size:0.8rem;">\u{1F534} 기재금지 '+danger+'건</span>';
-if(warning>0)html+='<span style="background:#fffbeb;color:#92400e;border:1px solid #fde68a;border-radius:20px;padding:3px 10px;font-size:0.8rem;">\u{1F7E1} 교사 확인 '+warning+'건</span>';
-if(generalize>0)html+='<span style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;border-radius:20px;padding:3px 10px;font-size:0.8rem;">\u{1F7E0} 일반화\u00B7한글대체 '+generalize+'건</span>';
-if(safe>0)html+='<span style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;border-radius:20px;padding:3px 10px;font-size:0.8rem;">\u{1F7E2} 발견 없음 '+safe+'건</span>';
-html+='</div>';
-allResults.forEach(function(r){
-var bgColor=r.statusKey==='danger'?'#fef2f2':r.statusKey==='warning'?'#fffbeb':r.statusKey==='generalize'?'#fff7ed':'#ecfdf5';
-html+='<div style="padding:8px 10px;margin-bottom:6px;border-radius:6px;background:'+bgColor+';font-size:0.85rem;">';
-html+='<strong>'+r.statusIcon+' '+r.rowNumber+'번:</strong> '+escapeHtml(r.originalText);
-if(r.detected.length){
-html+='<div style="margin-top:4px;padding-left:12px;font-size:0.8rem;">';
-r.detected.forEach(function(d){var isSchool=(d.basisType||'').includes('\uD559\uAD50');var badgeColor=isSchool?'#0369a1':'#6b7280';var badgeBg=isSchool?'#e0f2fe':'#f3f4f6';html+='<div><span style="color:#991b1b;font-weight:600;">'+escapeHtml(d.term)+'</span> <span style="color:var(--gray-500);">('+escapeHtml(d.category)+')</span> \u2192 '+escapeHtml(d.alt)+' <span style="background:'+badgeBg+';color:'+badgeColor+';border-radius:10px;padding:1px 7px;font-size:0.7rem;margin-left:4px;">'+escapeHtml(d.basisType||'\uACF5\uC2DD \uAE30\uC7AC \uAE30\uC900')+'</span></div>';});
-html+='</div>';
-}else{
-html+='<div style="margin-top:4px;padding-left:12px;font-size:0.8rem;color:var(--gray-500);">현재 웹사이트 규칙표에서 자동 검출된 표현은 없습니다. 기재 가능 확정이 아닙니다.</div>';
-}
-html+='</div>';
-});
-// AI 생성 문맥 검사
-var aiContextWarnings=[];
-allResults.forEach(function(r,idx){var warnings=checkAIGeneratedContext(r.originalText,item);if(warnings.length)aiContextWarnings.push({row:idx+1,warnings:warnings});});
-if(aiContextWarnings.length>0){
-html+='<div style="margin-top:12px;padding:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:var(--radius-sm);font-size:0.85rem;">';
-html+='<strong>\u{1F916} AI 생성 의심 표현</strong>';
-aiContextWarnings.forEach(function(w){html+='<div style="margin-top:6px;"><strong>'+w.row+'번:</strong> '+w.warnings.map(escapeHtml).join('; ')+'</div>';});
-html+='</div>';
-}
-// 필수 점검 요약
-html+='<div style="margin-top:12px;padding:12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:var(--radius-sm);font-size:0.83rem;">';
-html+='<strong>\u{1F4CB} 필수 점검 요약</strong> <span style="color:var(--gray-500);">(규칙표만으로 확정 불가 — AI 정밀검토 및 교사 확인 필요)</span>';
-html+='<ul style="margin:8px 0 0 16px;padding:0;list-style:disc;">';
-html+='<li>개인정보\u00B7민감정보 가능성: 자동 확정 불가 — AI 정밀검토 및 교사 확인 필요</li>';
-html+='<li>근거 없는 행동\u00B7역할\u00B7성과: 자동 확정 불가 — AI 정밀검토 및 교사 확인 필요</li>';
-html+='<li>과장된 성장\u00B7향상: 자동 확정 불가 — AI 정밀검토 및 교사 확인 필요</li>';
-html+='<li>편향 가능성: 자동 확정 불가 — AI 정밀검토 및 교사 확인 필요</li>';
-html+='<li>공식 기준 추가 확인 사항: 자동 확정 불가 — AI 정밀검토 및 교사 확인 필요</li>';
-html+='<li>교사 확인 포인트: 실제 관찰 사실, 학교 교육활동 여부, 과장\u00B7추측 여부 확인</li>';
-html+='</ul></div>';
-html+='</div>';
-resultDiv.innerHTML+=html;
+function renderTrafficDirectResult(){
+const el=document.getElementById('traffic-direct-result');
+if(el){el.innerHTML='';el.classList.add('hidden');}
 }
 
 // ===== 🚦 파일 7열 행별 결과표 =====
-function renderTrafficFileRowTable(checkedRows){
-var container=document.getElementById('traffic-file-row-result');
-if(!container)return;
-if(!checkedRows||!checkedRows.length){container.classList.add('hidden');container.innerHTML='';return;}
-container.classList.remove('hidden');
-var html='<div style="background:white;border:1px solid var(--gray-200);border-radius:var(--radius-sm);padding:14px;"><h4 style="margin-bottom:8px;">\u{1F4CA} 상세 검사 결과표</h4>';
-html+='<table style="width:100%;border-collapse:collapse;font-size:0.8rem;"><thead><tr style="background:var(--gray-100);">';
-html+='<th style="padding:6px 8px;border:1px solid var(--gray-200);white-space:nowrap;">학생 구분값</th>';
-html+='<th style="padding:6px 8px;border:1px solid var(--gray-200);">원문</th>';
-html+='<th style="padding:6px 8px;border:1px solid var(--gray-200);white-space:nowrap;">신호등 판정</th>';
-html+='<th style="padding:6px 8px;border:1px solid var(--gray-200);">확인할 표현</th>';
-html+='<th style="padding:6px 8px;border:1px solid var(--gray-200);">판정 이유</th>';
-html+='<th style="padding:6px 8px;border:1px solid var(--gray-200);">수정 제안</th>';
-html+='<th style="padding:6px 8px;border:1px solid var(--gray-200);">교사 확인 포인트</th>';
-html+='</tr></thead><tbody>';
-checkedRows.forEach(function(r){
-if(r.statusKey==='empty')return;
-var bgColor=r.statusKey==='danger'?'#fef2f2':r.statusKey==='warning'?'#fffbeb':r.statusKey==='generalize'?'#fff7ed':'#f9fafb';
-var expressions=r.detected&&r.detected.length?r.detected.map(function(d){return escapeHtml(d.term);}).join(', '):'\uC5C6\uC74C';
-var reasons=r.detected&&r.detected.length?r.detected.map(function(d){return escapeHtml(d.reason||'');}).join('; '):'\uADDC\uCE59\uD45C \uC790\uB3D9 \uAC80\uCD9C \uC5C6\uC74C';
-var alts=r.detected&&r.detected.length?r.detected.map(function(d){return escapeHtml(d.alt||'');}).join('; '):'AI \uC815\uBC00\uAC80\uD1A0 \uD6C4 \uC6D0\uBB38 \uC720\uC9C0 \uC5EC\uBD80 \uD655\uC778';
-var teacherCheck=r.detected&&r.detected.length?[...new Set(r.detected.map(function(d){return d.teacherCheck;}).filter(Boolean))].join('; ')||'전체 문맥과 실제 관찰 근거를 교사가 최종 확인':'전체 문맥과 실제 관찰 근거를 교사가 최종 확인';
-html+='<tr style="background:'+bgColor+';">';
-html+='<td style="padding:6px 8px;border:1px solid var(--gray-200);">'+escapeHtml(r.studentLabel||('\uC6D0\uBCF8 '+r.rowNumber+'\uD589'))+'</td>';
-html+='<td style="padding:6px 8px;border:1px solid var(--gray-200);max-width:200px;overflow:hidden;text-overflow:ellipsis;">'+escapeHtml(r.originalText)+'</td>';
-html+='<td style="padding:6px 8px;border:1px solid var(--gray-200);white-space:nowrap;">'+escapeHtml(r.statusIcon+' '+r.status)+'</td>';
-html+='<td style="padding:6px 8px;border:1px solid var(--gray-200);">'+expressions+'</td>';
-html+='<td style="padding:6px 8px;border:1px solid var(--gray-200);">'+reasons+'</td>';
-html+='<td style="padding:6px 8px;border:1px solid var(--gray-200);">'+alts+'</td>';
-html+='<td style="padding:6px 8px;border:1px solid var(--gray-200);">'+escapeHtml(teacherCheck)+'</td>';
-html+='</tr>';
-});
-html+='</tbody></table></div>';
-container.innerHTML=html;
+function renderTrafficFileRowTable(){
+const el=document.getElementById('traffic-file-row-result');
+if(el){el.innerHTML='';el.classList.add('hidden');}
 }
 
 // ===== 🚦 통합 프롬프트 생성 =====
@@ -3652,30 +3612,95 @@ searchIdx=end;
 return detected;
 }
 function getTrafficStatusFromDetected(detected){
-if(!Array.isArray(detected)||detected.length===0)return{key:"safe",icon:"🟢",label:"규칙표 기준 발견 없음"};
-if(detected.some(d=>d.status==="불가"))return{key:"danger",icon:"🔴",label:"기재금지 표현 포함"};
-if(detected.some(d=>["주의","조건부","예외확인","학교확인"].includes(d.status)))return{key:"warning",icon:"🟡",label:"교사 확인 필요"};
-if(detected.some(d=>["일반화필요","한글대체"].includes(d.status)))return{key:"generalize",icon:"🟠",label:"일반화·대체 필요"};
-return{key:"safe",icon:"🟢",label:"규칙표 기준 발견 없음"};
+if(!Array.isArray(detected)||detected.length===0)return{key:"safe",icon:"🟢",label:"자동 검출 후보 없음"};
+if(detected.some(d=>d.status==="불가"))return{key:"danger",icon:"🔴",label:"기재금지 검토 후보"};
+if(detected.some(d=>["주의","조건부","예외확인","학교확인"].includes(d.status)))return{key:"warning",icon:"🟡",label:"교사 확인 후보"};
+if(detected.some(d=>["일반화필요","한글대체"].includes(d.status)))return{key:"generalize",icon:"🟠",label:"표현 수정 검토 후보"};
+return{key:"safe",icon:"🟢",label:"자동 검출 후보 없음"};
 }
 
 
-function renderTrafficFileCheckResult(item){
-const state=window._trafficWorkbookState;const resultDiv=document.getElementById("traffic-file-result");if(!resultDiv)return;
-const checkedRows=state.checkedRows||[];const total=checkedRows.length;
-const danger=checkedRows.filter(r=>r.status.includes("기재금지")||r.status.includes("불가")).length;
-const warning=checkedRows.filter(r=>r.status.includes("교사 확인")||r.status.includes("주의")||r.status.includes("조건부")).length;
-const generalize=checkedRows.filter(r=>r.status.includes("일반화")).length;
-const empty=checkedRows.filter(r=>r.status==="빈칸").length;
-const safe=checkedRows.filter(r=>r.status.includes("발견 없음")).length;
-resultDiv.classList.remove("hidden");
-resultDiv.innerHTML='<div style="background:white;border:1px solid var(--gray-200);border-radius:var(--radius-sm);padding:14px;"><h4 style="margin-bottom:4px;">\u{1F4CB} 파일 신호등 검사 결과</h4><p style="font-size:0.8rem;color:var(--gray-500);margin-bottom:8px;">이 결과는 웹사이트 규칙표를 이용한 1차 검사입니다.</p><p style="font-size:0.85rem;"><strong>파일:</strong> '+escapeHtml(state.fileName)+'</p><p style="font-size:0.85rem;"><strong>시트:</strong> '+escapeHtml(state.activeSheetName)+'</p><p style="font-size:0.85rem;"><strong>검토대상열:</strong> '+escapeHtml(state.selectedColumn)+' ('+indexToExcelColumn(state.selectedColumnIndex)+'열)</p><p style="font-size:0.85rem;"><strong>항목:</strong> '+escapeHtml(item)+'</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;"><span style="background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:20px;padding:4px 10px;font-size:0.8rem;">\u{1F534} 기재금지 '+danger+'건</span><span style="background:#fffbeb;color:#92400e;border:1px solid #fde68a;border-radius:20px;padding:4px 10px;font-size:0.8rem;">\u{1F7E1} 교사 확인 '+warning+'건</span><span style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;border-radius:20px;padding:4px 10px;font-size:0.8rem;">\u{1F7E0} 일반화\u00B7한글대체 '+generalize+'건</span><span style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;border-radius:20px;padding:4px 10px;font-size:0.8rem;">\u{1F7E2} 발견 없음 '+safe+'건</span><span style="background:var(--gray-100);color:var(--gray-600);border:1px solid var(--gray-200);border-radius:20px;padding:4px 10px;font-size:0.8rem;">\u26AA 빈칸 '+empty+'건</span><span style="background:var(--primary-light);color:var(--primary-dark);border:1px solid #c7d2fe;border-radius:20px;padding:4px 10px;font-size:0.8rem;">총 '+total+'건</span></div><div style="margin-top:12px;padding:12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:var(--radius-sm);font-size:0.83rem;"><strong>\u{1F4CB} 필수 점검 요약</strong> <span style="color:var(--gray-500);">(규칙표만으로 확정 불가 — AI 정밀검토 및 교사 확인 필요)</span><ul style="margin:8px 0 0 16px;padding:0;list-style:disc;"><li>개인정보\u00B7민감정보 가능성: 자동 확정 불가 — AI 정밀검토 및 교사 확인 필요</li><li>근거 없는 행동\u00B7역할\u00B7성과: 자동 확정 불가 — AI 정밀검토 및 교사 확인 필요</li><li>과장된 성장\u00B7향상: 자동 확정 불가 — AI 정밀검토 및 교사 확인 필요</li><li>편향 가능성: 자동 확정 불가 — AI 정밀검토 및 교사 확인 필요</li><li>공식 기준 추가 확인 사항: 자동 확정 불가 — AI 정밀검토 및 교사 확인 필요</li><li>교사 확인 포인트: 실제 관찰 사실, 학교 교육활동 여부, 과장\u00B7추측 여부 확인</li></ul></div><p style="font-size:0.75rem;color:var(--gray-400);margin-top:8px;">별도의 검토 엑셀을 다운로드하거나 AI에 다시 첨부할 필요가 없습니다.</p></div>';}
+function renderTrafficFileCheckResult(){
+const el=document.getElementById('traffic-file-result');
+if(el){el.innerHTML='';el.classList.add('hidden');}
+}
 
+
+function resetTrafficFileStateForUpload(fileName){
+window._trafficWorkbookState={fileName:fileName||"",workbook:null,sheetNames:[],activeSheetName:"",rows:[],headers:[],selectedColumn:"",selectedColumnIndex:-1,checkedRows:[],checkedItem:"",studentColumnIndex:-1,studentColumnName:""};
+window._trafficChunkState={currentIndex:0,totalParts:1,nonEmptyRows:[],chunks:[],item:""};
+const existingNotice=document.getElementById("traffic-ai-prompt-notice");if(existingNotice)existingNotice.remove();
+const promptResult=document.getElementById('traffic-unified-prompt-result');if(promptResult){promptResult.innerHTML='';promptResult.classList.add('hidden');}
+}
+function joinPdfTextItems(items){
+return items.map(function(item){return String(item.str||'');}).join(' ')
+.replace(/\s+/g,' ')
+.replace(/\s+([,.;:!?%])/g,'$1')
+.replace(/\(\s+/g,'(')
+.replace(/\s+\)/g,')')
+.trim();
+}
+function groupPdfTextItemsIntoLines(items){
+const lineTolerance=2.5;
+const lines=[];
+(items||[]).filter(function(item){return item&&String(item.str||'').trim();}).forEach(function(item){
+const transform=item.transform||[];
+const x=Number(transform[4]||0),y=Number(transform[5]||0);
+let line=lines.find(function(candidate){return Math.abs(candidate.y-y)<=lineTolerance;});
+if(!line){line={y:y,items:[]};lines.push(line);}
+line.items.push({str:item.str,x:x,width:Number(item.width||0)});
+});
+lines.sort(function(a,b){return b.y-a.y;});
+return lines.map(function(line){line.items.sort(function(a,b){return a.x-b.x;});return joinPdfTextItems(line.items);}).filter(Boolean);
+}
+async function readTrafficPdfFile(file){
+if(window._pdfjsLoadFailed||!window.pdfjsLib){showToast('PDF 처리 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하거나 PDF를 TXT로 변환해주세요.');return;}
+resetTrafficFileStateForUpload(file.name);
+showToast('PDF의 텍스트를 읽고 있습니다');
+try{
+const data=new Uint8Array(await file.arrayBuffer());
+const loadingTask=window.pdfjsLib.getDocument({data:data});
+const pdf=await loadingTask.promise;
+const rows=[['페이지','추출 문장']];
+let totalTextLength=0;
+for(let pageNumber=1;pageNumber<=pdf.numPages;pageNumber++){
+const page=await pdf.getPage(pageNumber);
+const content=await page.getTextContent();
+const lines=groupPdfTextItemsIntoLines(content.items||[]);
+lines.forEach(function(line){const cleaned=String(line||'').trim();if(cleaned){rows.push([String(pageNumber),cleaned]);totalTextLength+=cleaned.length;}});
+}
+if(rows.length<2||totalTextLength<5){
+resetTrafficFileStateForUpload('');
+const result=document.getElementById('traffic-result');
+if(result){result.className='traffic-result warning';result.innerHTML='<strong>PDF에서 선택 가능한 텍스트를 찾지 못했습니다.</strong><br>스캔 이미지 PDF는 먼저 OCR을 적용해 검색 가능한 PDF로 변환한 뒤 다시 올려주세요.';result.classList.remove('hidden');}
+showToast('스캔 PDF이거나 텍스트가 없는 PDF입니다');
+return;
+}
+const state=window._trafficWorkbookState;
+state.fileName=file.name;
+state.sheetNames=['PDF 텍스트'];
+state.activeSheetName='PDF 텍스트';
+state.rows=rows;
+state.headers=rows[0];
+renderTrafficSheetSelect();
+renderTrafficColumnSelect();
+const columnSelect=document.getElementById('traffic-column-select');if(columnSelect)columnSelect.value='1';
+const studentSelect=document.getElementById('traffic-student-column-select');if(studentSelect)studentSelect.value='0';
+const panel=document.getElementById('traffic-file-column-panel');if(panel)panel.classList.remove('hidden');
+renderTrafficColumnPreview();
+showToast('PDF 텍스트를 읽었습니다. 추출 문장을 확인해주세요');
+}catch(err){
+console.error(err);
+resetTrafficFileStateForUpload('');
+showToast('PDF를 읽는 중 오류가 발생했습니다. 암호화 여부와 파일 상태를 확인해주세요');
+}
+}
 function handleTrafficFileDrop(e){e.preventDefault();e.currentTarget.classList.remove('dragover');const file=e.dataTransfer.files&&e.dataTransfer.files[0];if(file)readTrafficFile(file);}
 function handleTrafficFileSelect(e){const file=e.target.files&&e.target.files[0];if(file)readTrafficFile(file);}
 function readTrafficFile(file){
 if(!file)return;
 const ext=file.name.split('.').pop().toLowerCase();
+if(ext==='pdf'){readTrafficPdfFile(file);return;}
 // XLSX 라이브러리 없이도 CSV/TSV/TXT 기본 파싱
 if(window._xlsxLoadFailed && ['csv','tsv','txt'].includes(ext)){
   const reader=new FileReader();reader.onload=function(ev){
@@ -3692,13 +3717,11 @@ if(window._xlsxLoadFailed && ['csv','tsv','txt'].includes(ext)){
 }
 if(typeof XLSX==='undefined'||window._xlsxLoadFailed){showToast('엑셀 처리 라이브러리를 불러오지 못했습니다. CSV로 변환 후 업로드하세요.');return;}
 // 12. 파일 확장자 실제 검증
-const allowedExts=['xlsx','xls','csv','tsv','txt'];
+const allowedExts=['xlsx','xls','csv','tsv','txt','pdf'];
 if(!allowedExts.includes(ext)){showToast(`⚠️ 지원하지 않는 파일 형식입니다. (${allowedExts.join(', ')} 지원)`);return;}
 if(!validateFileExtension(file)){showToast('⚠️ 파일 확장자와 실제 내용이 일치하지 않을 수 있습니다. 확인 후 진행합니다.');}
 // 새 파일 선택 시 이전 상태 초기화
-window._trafficWorkbookState={fileName:"",workbook:null,sheetNames:[],activeSheetName:"",rows:[],headers:[],selectedColumn:"",selectedColumnIndex:-1,checkedRows:[],checkedItem:"",studentColumnIndex:-1,studentColumnName:""};
-window._trafficChunkState={currentIndex:0,totalParts:1,nonEmptyRows:[],chunks:[],item:""};
-const existingNotice=document.getElementById("traffic-ai-prompt-notice");if(existingNotice)existingNotice.remove();
+resetTrafficFileStateForUpload(file.name);
 const reader=new FileReader();
 reader.onload=function(ev){
 try{
@@ -3715,8 +3738,6 @@ renderTrafficSheetSelect();
 loadTrafficSheet(sheetNames[0]);
 const panel=document.getElementById('traffic-file-column-panel');
 if(panel)panel.classList.remove('hidden');
-const resultDiv=document.getElementById('traffic-file-result');
-if(resultDiv){resultDiv.classList.remove('hidden');resultDiv.innerHTML=`<div style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:12px;font-size:0.9rem;color:#3730a3;">\u2705 파일을 읽었습니다. 검토할 시트와 열을 선택한 뒤 <strong>AI 정밀검토 프롬프트 만들기</strong>를 눌러주세요.</div>`;}
 showToast('파일을 읽었습니다. 검토할 열을 선택해주세요');
 }catch(err){console.error(err);showToast('파일을 읽는 중 오류가 발생했습니다');}
 };
@@ -3801,12 +3822,8 @@ function trafficChunkNext(){if(!window._trafficChunkState)return;if(window._traf
 // ===== 🚦 초기화 함수 =====
 function clearTrafficAllResults(){
 const result=document.getElementById("traffic-result");
-const fileResult=document.getElementById("traffic-file-result");
-const rowResult=document.getElementById("traffic-file-row-result");
 const promptResult=document.getElementById("traffic-unified-prompt-result");
 if(result){result.innerHTML="";result.className="traffic-result hidden";}
-if(fileResult){fileResult.innerHTML="";fileResult.classList.add("hidden");}
-if(rowResult){rowResult.innerHTML="";rowResult.classList.add("hidden");}
 if(promptResult){promptResult.innerHTML="";promptResult.classList.add("hidden");}
 currentPrompt="";currentInput="";
 window._trafficWorkbookState.checkedRows=[];
@@ -3824,15 +3841,11 @@ function resetTrafficFileCheck(showMessage){
 const fileInput=document.getElementById("traffic-file-input");
 const columnInput=document.getElementById("traffic-column-input");
 const columnPanel=document.getElementById("traffic-file-column-panel");
-const fileResult=document.getElementById("traffic-file-result");
-const rowResult=document.getElementById("traffic-file-row-result");
 const previewEl=document.getElementById("traffic-column-preview");
 const promptResult=document.getElementById("traffic-unified-prompt-result");
 if(fileInput)fileInput.value="";
 if(columnInput)columnInput.value="";
 if(columnPanel)columnPanel.classList.add("hidden");
-if(fileResult){fileResult.innerHTML="";fileResult.classList.add("hidden");}
-if(rowResult){rowResult.innerHTML="";rowResult.classList.add("hidden");}
 if(previewEl){previewEl.innerHTML="";previewEl.classList.add("hidden");}
 if(promptResult){promptResult.innerHTML="";promptResult.classList.add("hidden");}
 currentPrompt="";currentInput="";
