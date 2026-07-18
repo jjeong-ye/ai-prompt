@@ -1002,7 +1002,7 @@ body.dark .result-prompt-box,body.dark .refine-section,body.dark .safety-block,b
 <i class="ri-upload-cloud-line"></i>
 <p>파일을 여기에 끌어다 놓거나</p>
 <label class="file-select-btn">파일 선택<input type="file" accept=".txt,.md,.csv,.html,.htm" onchange="handleFileSelect(event)" class="file-input-hidden"></label>
-<p class="file-hint">txt, md, csv, html 파일 지원</p>
+<p class="file-hint">txt, md, csv, html 파일 지원 · 2MB 이하</p>
 </div>
 <textarea id="reverse-standalone-input" class="reverse-textarea" placeholder="기존 자료를 여기에 직접 붙여넣으세요" style="min-height:150px;"></textarea>
 <div class="u-mt-12">
@@ -2936,8 +2936,8 @@ function doReverseGenerate(input,newTopic){const topic=newTopic||'[새 주제]';
 function handleDragOver(e){e.preventDefault();e.currentTarget.classList.add('dragover');}
 function handleDragLeave(e){e.currentTarget.classList.remove('dragover');}
 function handleFileDrop(e){e.preventDefault();e.currentTarget.classList.remove('dragover');const file=e.dataTransfer.files[0];if(file)readFileContent(file);}
-function handleFileSelect(e){const file=e.target.files[0];if(file)readFileContent(file);}
-function readFileContent(file){const validExt=['.txt','.md','.csv','.html','.htm'];const ext='.'+file.name.split('.').pop().toLowerCase();if(!validExt.includes(ext)){showToast('지원하지 않는 파일 형식입니다. txt, md, csv, html 파일만 가능합니다.');return;}const reader=new FileReader();reader.onload=function(e){let content=e.target.result;if(ext==='.html'||ext==='.htm'){const temp=document.createElement('div');temp.innerHTML=content;content=temp.textContent||temp.innerText||'';}document.getElementById('reverse-standalone-input').value=content.trim();showToast(`"${file.name}" 파일이 로드되었습니다`);};reader.readAsText(file,'UTF-8');}
+function handleFileSelect(e){const file=e.target.files[0];if(file){readFileContent(file);e.target.value='';};}
+function readFileContent(file){const validExt=['.txt','.md','.csv','.html','.htm'];const ext='.'+file.name.split('.').pop().toLowerCase();if(!validExt.includes(ext)){showToast('지원하지 않는 파일 형식입니다. txt, md, csv, html 파일만 가능합니다.');return;}if(file.size>2*1024*1024){showToast('파일이 너무 큽니다. 2MB 이하의 파일을 사용해주세요.');return;}const reader=new FileReader();reader.onerror=function(){showToast('파일을 읽지 못했습니다. 파일을 다시 확인해주세요.');};reader.onabort=function(){showToast('파일을 읽지 못했습니다. 파일을 다시 확인해주세요.');};reader.onload=function(e){let content=e.target.result;if(content.includes('\uFFFD')){showToast('글자가 깨져 있습니다. 파일을 UTF-8 형식으로 저장한 뒤 다시 선택해주세요.');return;}if(ext==='.html'||ext==='.htm'){const temp=document.createElement('div');temp.innerHTML=content;['script','style','noscript','template'].forEach(function(tag){temp.querySelectorAll(tag).forEach(function(el){el.remove();});});content=temp.textContent||temp.innerText||'';}if(!content.trim()){showToast('파일에 읽을 수 있는 내용이 없습니다.');return;}document.getElementById('reverse-standalone-input').value=content.trim();showToast('파일 내용을 불러왔습니다.');};reader.readAsText(file,'UTF-8');}
 
 // ===== 생기부 제작소 =====
 let currentRecordType='';
