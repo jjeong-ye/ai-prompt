@@ -147,7 +147,29 @@ main{max-width:var(--max-width);margin:0 auto;padding:24px 20px 60px;}
 .reverse-shortcut{margin-top:16px;text-align:center;}
 .reverse-shortcut-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;background:none;border:1px dashed var(--gray-300);border-radius:24px;color:var(--gray-500);font-size:0.85rem;cursor:pointer;transition:all 0.2s;}
 .reverse-shortcut-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light);}
-.reverse-standalone{max-width:650px;}
+.reverse-feature-block{margin-top:20px;}
+.reverse-divider{display:flex;align-items:center;gap:12px;margin:4px 0 14px;color:var(--gray-400);font-size:0.78rem;}
+.reverse-divider::before,.reverse-divider::after{content:'';height:1px;background:var(--gray-200);flex:1;}
+.reverse-divider span{white-space:nowrap;}
+.reverse-feature-btn{width:100%;max-width:600px;margin:0 auto;padding:15px 16px;background:linear-gradient(135deg,#f5f3ff 0%,#eef2ff 100%);border:1px solid #c4b5fd;border-radius:14px;color:var(--primary-dark);text-align:left;display:flex;align-items:center;gap:12px;box-shadow:0 4px 14px rgba(79,70,229,0.08);}
+.reverse-feature-btn:hover{background:linear-gradient(135deg,#ede9fe 0%,#e0e7ff 100%);border-color:var(--primary);color:var(--primary-dark);transform:translateY(-1px);box-shadow:0 7px 18px rgba(79,70,229,0.14);}
+.reverse-feature-icon{width:40px;height:40px;border-radius:12px;background:white;display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:1.2rem;flex-shrink:0;box-shadow:0 2px 8px rgba(79,70,229,0.10);}
+.reverse-feature-copy{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1;}
+.reverse-feature-copy strong{font-size:0.98rem;line-height:1.3;}
+.reverse-feature-copy small{font-size:0.78rem;line-height:1.45;color:var(--gray-500);font-weight:400;}
+.reverse-feature-arrow{font-size:1.1rem;color:var(--primary);flex-shrink:0;}
+body.dark .reverse-feature-btn{background:linear-gradient(135deg,#2a2050 0%,#20264d 100%);border-color:#4c3f78;color:#f0f0ff;}
+body.dark .reverse-feature-btn:hover{background:linear-gradient(135deg,#352965 0%,#28305e 100%);border-color:#7c6fd2;}
+body.dark .reverse-feature-icon{background:#1a1a2e;color:#c4b5fd;}
+body.dark .reverse-feature-copy small{color:#aaaacc;}
+@media(max-width:480px){
+  .reverse-feature-btn{padding:13px 14px;gap:10px;}
+  .reverse-feature-icon{width:36px;height:36px;border-radius:10px;}
+  .reverse-feature-copy strong{font-size:0.94rem;}
+  .reverse-feature-copy small{font-size:0.74rem;}
+}
+
+.reverse-standalone{max-width:650px;margin:0 auto;}
 .reverse-info{background:var(--primary-light);border:1px solid #c7d2fe;border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:20px;}
 .reverse-info p{font-size:0.9rem;color:var(--primary-dark);margin-bottom:4px;}
 .reverse-info p:last-child{margin-bottom:0;}
@@ -451,7 +473,17 @@ body.dark .result-prompt-box,body.dark .refine-section,body.dark .safety-block,b
 </div>
 <button class="main-submit-btn" onclick="generatePrompt()"><i class="ri-sparkling-line"></i> 프롬프트 만들기</button>
 </div>
-<div class="reverse-shortcut"><button class="reverse-shortcut-btn" onclick="openSection('reverse')"><i class="ri-swap-line"></i> 이미 있는 자료가 있나요? → 거꾸로 생성하기</button></div>
+<div class="reverse-shortcut reverse-feature-block">
+  <div class="reverse-divider"><span>또는</span></div>
+  <button class="reverse-shortcut-btn reverse-feature-btn" onclick="openSection('reverse')" aria-label="거꾸로 생성하기">
+    <span class="reverse-feature-icon"><i class="ri-swap-line"></i></span>
+    <span class="reverse-feature-copy">
+      <strong>거꾸로 생성하기</strong>
+      <small>이미 있는 자료의 형식과 특징을 분석해 새 주제용 프롬프트로 바꿔드려요</small>
+    </span>
+    <i class="ri-arrow-right-line reverse-feature-arrow" aria-hidden="true"></i>
+  </button>
+</div>
 </div><!-- /.hero-card -->
 </div>
 <div class="quick-buttons stage14-public-hidden">
